@@ -32,4 +32,5 @@ fun ExpenseCategory.info(): CategoryInfo = when (this) {
 }
 
 fun String.toExpenseCategory(): ExpenseCategory =
-    ExpenseCategory.entries.firstOrNull { it.name == this } ?: ExpenseCategory.OTHER
+    ExpenseCategory.entries.firstOrNull { it.name.equals(this, ignoreCase = true) }
+        ?: ExpenseCategory.OTHER

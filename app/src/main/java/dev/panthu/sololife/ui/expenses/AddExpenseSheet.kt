@@ -6,10 +6,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.panthu.sololife.data.db.ExpenseCategory
 import dev.panthu.sololife.util.CategoryInfo
+import dev.panthu.sololife.util.DateUtils
 import dev.panthu.sololife.util.info
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,6 +36,8 @@ fun AddExpenseSheet(
     var amountText by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf(ExpenseCategory.FOOD) }
     var description by remember { mutableStateOf("") }
+    var date by remember { mutableStateOf(System.currentTimeMillis()) }
+    var showDatePicker by remember { mutableStateOf(false) }
     val amountFocus = remember { FocusRequester() }
 
     LaunchedEffect(Unit) { amountFocus.requestFocus() }
@@ -93,7 +96,32 @@ fun AddExpenseSheet(
                 }
             }
 
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(20.dp))
+
+            // Date selector row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { showDatePicker = true }
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    Icons.Rounded.CalendarMonth,
+                    contentDescription = "Date",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = DateUtils.formatFull(date),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            Spacer(Modifier.height(12.dp))
 
             // Category pills
             Text(
@@ -142,7 +170,7 @@ fun AddExpenseSheet(
             Button(
                 onClick = {
                     val amount = amountText.toDoubleOrNull() ?: return@Button
-                    onAdd(amount, selectedCategory, description.trim(), System.currentTimeMillis())
+                    onAdd(amount, selectedCategory, description.trim(), date)
                     onDismiss()
                 },
                 enabled = isValid,
@@ -154,8 +182,31 @@ fun AddExpenseSheet(
                     containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
-                Text("Add Expense", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Add Expense",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
+        }
+    }
+
+    // Date picker dialog (outside ModalBottomSheet to avoid z-order issues)
+    if (showDatePicker) {
+        val pickerState = rememberDatePickerState(initialSelectedDateMillis = date)
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    pickerState.selectedDateMillis?.let { date = it }
+                    showDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+            }
+        ) {
+            DatePicker(state = pickerState)
         }
     }
 }
@@ -184,13 +235,18 @@ private fun CategoryPill(info: CategoryInfo, isSelected: Boolean, onClick: () ->
         Text(
             text = info.label,
             style = MaterialTheme.typography.labelMedium,
-            color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+            color = if (isSelected) MaterialTheme.colorScheme.onSurface
+                    else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
 
 @Composable
-private fun BasicAmountField(value: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
+private fun BasicAmountField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
     androidx.compose.foundation.text.BasicTextField(
         value = value,
         onValueChange = onValueChange,

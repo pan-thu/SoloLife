@@ -26,10 +26,12 @@ import dev.panthu.sololife.SoloLifeApp
 import dev.panthu.sololife.data.db.DiaryEntry
 import dev.panthu.sololife.data.db.Expense
 import dev.panthu.sololife.util.DataTransfer
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 // ── ViewModel ─────────────────────────────────────────────────────────────────
 
@@ -46,24 +48,27 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     val data = combine(
         diaryRepo.getAll(),
         expenseRepo.getAll()
-    ) { diary: List<dev.panthu.sololife.data.db.DiaryEntry>,
-        expenses: List<dev.panthu.sololife.data.db.Expense> ->
+    ) { diary: List<DiaryEntry>, expenses: List<Expense> ->
         SettingsExportData(diary, expenses)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsExportData())
 
     fun export(context: Context, uri: Uri) {
         viewModelScope.launch {
             val d = data.value
-            DataTransfer.export(context, uri, d.diary, d.expenses).fold(
-                onSuccess = { toast(context, "Export successful") },
-                onFailure = { toast(context, "Export failed: ${it.message}") }
+            val result = withContext(Dispatchers.IO) {
+                DataTransfer.export(context, uri, d.diary, d.expenses)
+            }
+            result.fold(
+                onSuccess = { Toast.makeText(context, "Export successful", Toast.LENGTH_SHORT).show() },
+                onFailure = { Toast.makeText(context, "Export failed: ${it.message ?: "unknown error"}", Toast.LENGTH_SHORT).show() }
             )
         }
     }
 
     fun import(context: Context, uri: Uri, replace: Boolean) {
         viewModelScope.launch {
-            DataTransfer.import(context, uri).fold(
+            val result = withContext(Dispatchers.IO) { DataTransfer.import(context, uri) }
+            result.fold(
                 onSuccess = { backup ->
                     if (replace) {
                         diaryRepo.replaceAll(backup.diary.map { it.copy(id = 0) })
@@ -72,16 +77,16 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                         diaryRepo.mergeAll(backup.diary.map { it.copy(id = 0) })
                         expenseRepo.mergeAll(backup.expenses.map { it.copy(id = 0) })
                     }
-                    toast(context, "Import successful — ${backup.diary.size} diary, ${backup.expenses.size} expenses")
+                    Toast.makeText(
+                        context,
+                        "Imported ${backup.diary.size} diary entries & ${backup.expenses.size} expenses",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 },
-                onFailure = { toast(context, "Import failed: ${it.message}") }
+                onFailure = {
+                    Toast.makeText(context, "Import failed: ${it.message ?: "invalid file"}", Toast.LENGTH_SHORT).show()
+                }
             )
-        }
-    }
-
-    private fun toast(context: Context, message: String) {
-        android.os.Handler(android.os.Looper.getMainLooper()).post {
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
     }
 }

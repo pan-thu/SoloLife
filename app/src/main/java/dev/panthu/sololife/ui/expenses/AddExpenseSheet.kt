@@ -1,0 +1,221 @@
+package dev.panthu.sololife.ui.expenses
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import dev.panthu.sololife.data.db.ExpenseCategory
+import dev.panthu.sololife.util.CategoryInfo
+import dev.panthu.sololife.util.info
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddExpenseSheet(
+    onDismiss: () -> Unit,
+    onAdd: (amount: Double, category: ExpenseCategory, description: String, date: Long) -> Unit
+) {
+    var amountText by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf(ExpenseCategory.FOOD) }
+    var description by remember { mutableStateOf("") }
+    val amountFocus = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) { amountFocus.requestFocus() }
+
+    val isValid = amountText.toDoubleOrNull()?.let { it > 0.0 } == true
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 4.dp,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Add Expense",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Rounded.Close, contentDescription = "Close")
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            // Amount input — large centered
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "$",
+                        style = MaterialTheme.typography.displayMedium,
+                        color = MaterialTheme.colorScheme.tertiary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    BasicAmountField(
+                        value = amountText,
+                        onValueChange = { amountText = it.filter { c -> c.isDigit() || c == '.' } },
+                        modifier = Modifier
+                            .widthIn(min = 80.dp, max = 200.dp)
+                            .focusRequester(amountFocus)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(28.dp))
+
+            // Category pills
+            Text(
+                "Category",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.align(Alignment.Start)
+            )
+            Spacer(Modifier.height(10.dp))
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 0.dp)
+            ) {
+                items(ExpenseCategory.entries) { category ->
+                    val info = category.info()
+                    val isSelected = category == selectedCategory
+                    CategoryPill(
+                        info = info,
+                        isSelected = isSelected,
+                        onClick = { selectedCategory = category }
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            // Description
+            OutlinedTextField(
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("Description (optional)") },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent
+                )
+            )
+
+            Spacer(Modifier.height(24.dp))
+
+            // Add button
+            Button(
+                onClick = {
+                    val amount = amountText.toDoubleOrNull() ?: return@Button
+                    onAdd(amount, selectedCategory, description.trim(), System.currentTimeMillis())
+                    onDismiss()
+                },
+                enabled = isValid,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Text("Add Expense", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CategoryPill(info: CategoryInfo, isSelected: Boolean, onClick: () -> Unit) {
+    val bg = if (isSelected) info.color.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant
+    val border = if (isSelected) info.color else androidx.compose.ui.graphics.Color.Transparent
+
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(24.dp))
+            .background(bg)
+            .border(1.5.dp, border, RoundedCornerShape(24.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Icon(
+            imageVector = info.icon,
+            contentDescription = null,
+            tint = info.color,
+            modifier = Modifier.size(16.dp)
+        )
+        Text(
+            text = info.label,
+            style = MaterialTheme.typography.labelMedium,
+            color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun BasicAmountField(value: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
+    androidx.compose.foundation.text.BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        textStyle = androidx.compose.ui.text.TextStyle(
+            fontSize = MaterialTheme.typography.displayMedium.fontSize,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Start
+        ),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
+        singleLine = true,
+        decorationBox = { inner ->
+            Box {
+                if (value.isEmpty()) {
+                    Text(
+                        "0.00",
+                        style = MaterialTheme.typography.displayMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                    )
+                }
+                inner()
+            }
+        },
+        modifier = modifier
+    )
+}

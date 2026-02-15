@@ -1,0 +1,234 @@
+package dev.panthu.sololife.ui.expenses
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ReceiptLong
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.panthu.sololife.data.db.Expense
+import dev.panthu.sololife.ui.components.AmountText
+import dev.panthu.sololife.ui.components.EmptyState
+import dev.panthu.sololife.ui.components.SwipeToDeleteContainer
+import dev.panthu.sololife.util.toExpenseCategory
+import dev.panthu.sololife.util.DateUtils
+import dev.panthu.sololife.util.info
+import java.util.Calendar
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
+    val state by vm.uiState.collectAsState()
+    var showSheet by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Expenses", style = MaterialTheme.typography.titleLarge) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showSheet = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Rounded.Add, contentDescription = "Add expense")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            // Week summary header
+            WeekSummaryCard(weekTotal = state.weekTotal)
+
+            if (state.expenses.isEmpty()) {
+                EmptyState(
+                    icon = { Icon(Icons.Rounded.ReceiptLong, contentDescription = null, Modifier.size(52.dp)) },
+                    title = "No expenses yet",
+                    subtitle = "Tap + to record your first expense"
+                )
+            } else {
+                val grouped = remember(state.expenses) { state.expenses.groupByDay() }
+
+                LazyColumn(
+                    contentPadding = PaddingValues(bottom = 100.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    grouped.forEach { (dayKey, dayExpenses) ->
+                        item(key = "day_$dayKey") {
+                            DayHeader(millis = dayKey, expenses = dayExpenses)
+                        }
+                        items(dayExpenses, key = { it.id }) { expense ->
+                            SwipeToDeleteContainer(onDelete = { vm.delete(expense) }) {
+                                ExpenseRow(expense = expense)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showSheet) {
+        AddExpenseSheet(
+            onDismiss = { showSheet = false },
+            onAdd = { amount, category, description, date ->
+                vm.addExpense(amount, category, description, date)
+            }
+        )
+    }
+}
+
+@Composable
+private fun WeekSummaryCard(weekTotal: Double) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 2.dp,
+        shape = RoundedCornerShape(20.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text(
+                    "This Week",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(4.dp))
+                AmountText(
+                    amount = weekTotal,
+                    style = MaterialTheme.typography.displaySmall
+                )
+            }
+            Text(
+                text = "${DateUtils.formatShort(DateUtils.weekStart())} – ${DateUtils.formatShort(DateUtils.weekEnd())}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun DayHeader(millis: Long, expenses: List<Expense>) {
+    val dayTotal = expenses.sumOf { it.amount }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = if (DateUtils.isSameDay(millis, System.currentTimeMillis()))
+                "Today" else DateUtils.formatFull(millis),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.SemiBold
+        )
+        AmountText(amount = dayTotal, style = MaterialTheme.typography.labelLarge)
+    }
+}
+
+@Composable
+private fun ExpenseRow(expense: Expense) {
+    val category = expense.category.toExpenseCategory()
+    val info = category.info()
+
+    Surface(
+        modifier = Modifier
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Category icon circle
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(info.color.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = info.icon,
+                    contentDescription = null,
+                    tint = info.color,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            Spacer(Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = if (expense.description.isBlank()) info.label else expense.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1
+                )
+                if (expense.description.isNotBlank()) {
+                    Text(
+                        text = info.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = info.color
+                    )
+                }
+            }
+
+            AmountText(
+                amount = expense.amount,
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+    }
+}
+
+private fun List<Expense>.groupByDay(): Map<Long, List<Expense>> {
+    val result = LinkedHashMap<Long, MutableList<Expense>>()
+    forEach { expense ->
+        val cal = Calendar.getInstance()
+        cal.timeInMillis = expense.date
+        cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0)
+        val key = cal.timeInMillis
+        result.getOrPut(key) { mutableListOf() }.add(expense)
+    }
+    return result
+}

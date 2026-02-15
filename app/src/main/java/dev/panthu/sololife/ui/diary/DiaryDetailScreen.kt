@@ -43,11 +43,16 @@ fun DiaryDetailScreen(
     // Load existing entry
     LaunchedEffect(entryId) {
         if (entryId != null) {
-            vm.getEntry(entryId)?.let { entry ->
-                title = entry.title
-                content = entry.content
-                date = entry.date
+            val entry = vm.getEntry(entryId)
+            if (entry == null) {
+                // Entry not found (deleted while navigating?) — go back rather than
+                // showing a blank form whose save() would silently drop the data.
+                onBack()
+                return@LaunchedEffect
             }
+            title = entry.title
+            content = entry.content
+            date = entry.date
             loaded = true
         }
     }

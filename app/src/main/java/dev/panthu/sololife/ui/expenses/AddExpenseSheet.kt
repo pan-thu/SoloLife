@@ -88,7 +88,11 @@ fun AddExpenseSheet(
                     Spacer(Modifier.width(4.dp))
                     BasicAmountField(
                         value = amountText,
-                        onValueChange = { amountText = it.filter { c -> c.isDigit() || c == '.' } },
+                        onValueChange = { new ->
+                            val filtered = new.filter { c -> c.isDigit() || c == '.' }
+                            // Block a second decimal point
+                            if (filtered.count { it == '.' } <= 1) amountText = filtered
+                        },
                         modifier = Modifier
                             .widthIn(min = 80.dp, max = 200.dp)
                             .focusRequester(amountFocus)

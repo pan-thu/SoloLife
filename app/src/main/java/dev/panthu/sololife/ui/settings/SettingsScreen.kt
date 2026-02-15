@@ -152,7 +152,7 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel()) {
 
             Spacer(Modifier.weight(1f))
             Text(
-                "SoloLife v${"1.0"}",
+                "SoloLife v1.0",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.CenterHorizontally)

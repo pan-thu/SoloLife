@@ -8,9 +8,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
+import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
 import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.MenuBook
-import androidx.compose.material.icons.rounded.ReceiptLong
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -61,16 +62,17 @@ private data class NavItem(
 @Composable
 private fun BottomNav(navController: NavHostController) {
     val navItems = listOf(
-        NavItem(Screen.Home,     "Home",     { Icon(Icons.Rounded.Home,       "Home") }),
-        NavItem(Screen.Diary,    "Diary",    { Icon(Icons.Rounded.MenuBook,   "Diary") }),
-        NavItem(Screen.Expenses, "Expenses", { Icon(Icons.Rounded.ReceiptLong,"Expenses") })
+        NavItem(Screen.Home,     "Home",     { Icon(Icons.Rounded.Home,        "Home") }),
+        NavItem(Screen.Diary,    "Diary",    { Icon(Icons.AutoMirrored.Rounded.MenuBook,    "Diary") }),
+        NavItem(Screen.Expenses, "Expenses", { Icon(Icons.AutoMirrored.Rounded.ReceiptLong, "Expenses") }),
+        NavItem(Screen.Settings, "Settings", { Icon(Icons.Rounded.Settings,    "Settings") })
     )
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDest = backStackEntry?.destination
 
     // Hide bottom nav on sub-screens (detail, settings)
-    val topLevelRoutes = setOf(Screen.Home.route, Screen.Diary.route, Screen.Expenses.route)
+    val topLevelRoutes = setOf(Screen.Home.route, Screen.Diary.route, Screen.Expenses.route, Screen.Settings.route)
     val showNav = currentDest?.route in topLevelRoutes
 
     if (showNav) {

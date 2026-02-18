@@ -8,7 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.ReceiptLong
+import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -63,7 +63,7 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
 
             if (state.expenses.isEmpty()) {
                 EmptyState(
-                    icon = { Icon(Icons.Rounded.ReceiptLong, contentDescription = null, Modifier.size(52.dp)) },
+                    icon = { Icon(Icons.AutoMirrored.Rounded.ReceiptLong, contentDescription = null, Modifier.size(52.dp)) },
                     title = "No expenses yet",
                     subtitle = "Tap + to record your first expense"
                 )

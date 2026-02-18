@@ -13,6 +13,7 @@ import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,7 +41,12 @@ fun AddExpenseSheet(
     var showDatePicker by remember { mutableStateOf(false) }
     val amountFocus = remember { FocusRequester() }
 
-    LaunchedEffect(Unit) { amountFocus.requestFocus() }
+    // Delay focus request so the sheet window finishes initializing before the keyboard appears,
+    // preventing a FocusEvent ANR on the main thread.
+    LaunchedEffect(Unit) {
+        delay(300)
+        amountFocus.requestFocus()
+    }
 
     val isValid = amountText.toDoubleOrNull()?.let { it > 0.0 } == true
 

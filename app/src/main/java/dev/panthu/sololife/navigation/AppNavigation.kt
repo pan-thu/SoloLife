@@ -1,5 +1,7 @@
 package dev.panthu.sololife.navigation
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -23,17 +25,30 @@ sealed class Screen(val route: String) {
     }
 }
 
+// Top-level tabs get a subtle crossfade; sub-screens slide in from right
+private val tabEnter = fadeIn(tween(250))
+private val tabExit  = fadeOut(tween(200))
+
+private val subEnter = fadeIn(tween(300)) + slideInHorizontally(tween(300)) { it / 4 }
+private val subExit  = fadeOut(tween(200)) + slideOutHorizontally(tween(200)) { it / 4 }
+private val subPopEnter = fadeIn(tween(300)) + slideInHorizontally(tween(300)) { -it / 4 }
+private val subPopExit  = fadeOut(tween(200)) + slideOutHorizontally(tween(200)) { -it / 4 }
+
 @Composable
 fun AppNavigation(navController: NavHostController) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route
+        startDestination = Screen.Home.route,
+        enterTransition = { tabEnter },
+        exitTransition = { tabExit },
+        popEnterTransition = { tabEnter },
+        popExitTransition = { tabExit }
     ) {
         composable(Screen.Home.route) {
             HomeScreen(
                 onNavigateDiary    = { navController.navigate(Screen.Diary.route) },
                 onNavigateExpenses = { navController.navigate(Screen.Expenses.route) },
-                onNavigateSettings = { navController.navigate(Screen.Settings.route) },
+                onNewDiaryEntry    = { navController.navigate(Screen.DiaryNew.route) },
                 onOpenDiaryEntry   = { id -> navController.navigate(Screen.DiaryDetail.route(id)) }
             )
         }
@@ -43,12 +58,22 @@ fun AppNavigation(navController: NavHostController) {
                 onNewEntry  = { navController.navigate(Screen.DiaryNew.route) }
             )
         }
-        composable(Screen.DiaryNew.route) {
+        composable(
+            route = Screen.DiaryNew.route,
+            enterTransition = { subEnter },
+            exitTransition = { subExit },
+            popEnterTransition = { subPopEnter },
+            popExitTransition = { subPopExit }
+        ) {
             DiaryDetailScreen(entryId = null, onBack = { navController.popBackStack() })
         }
         composable(
             route = Screen.DiaryDetail.route,
-            arguments = listOf(navArgument("entryId") { type = NavType.LongType })
+            arguments = listOf(navArgument("entryId") { type = NavType.LongType }),
+            enterTransition = { subEnter },
+            exitTransition = { subExit },
+            popEnterTransition = { subPopEnter },
+            popExitTransition = { subPopExit }
         ) { backStack ->
             val id = backStack.arguments?.getLong("entryId")
             DiaryDetailScreen(entryId = id, onBack = { navController.popBackStack() })
@@ -57,7 +82,7 @@ fun AppNavigation(navController: NavHostController) {
             ExpensesScreen()
         }
         composable(Screen.Settings.route) {
-            SettingsScreen(onBack = { navController.popBackStack() })
+            SettingsScreen()
         }
     }
 }

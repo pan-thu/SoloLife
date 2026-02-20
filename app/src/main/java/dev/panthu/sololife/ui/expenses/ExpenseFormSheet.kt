@@ -181,7 +181,7 @@ fun ExpenseFormSheet(
                 )
             )
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(28.dp))
 
             // Save / Add button
             Button(

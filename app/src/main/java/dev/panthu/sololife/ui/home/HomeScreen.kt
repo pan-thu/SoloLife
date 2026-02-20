@@ -96,7 +96,7 @@ fun HomeScreen(
         ) {
             Row(
                 modifier = Modifier
-                    .padding(horizontal = 20.dp)
+                    .padding(horizontal = 24.dp)
                     .fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -135,7 +135,7 @@ fun HomeScreen(
                 if (state.recentExpenses.isEmpty()) {
                     Surface(
                         modifier = Modifier
-                            .padding(horizontal = 20.dp)
+                            .padding(horizontal = 24.dp)
                             .fillMaxWidth(),
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                         shape = RoundedCornerShape(16.dp)
@@ -156,7 +156,7 @@ fun HomeScreen(
                 } else {
                     Surface(
                         modifier = Modifier
-                            .padding(horizontal = 20.dp)
+                            .padding(horizontal = 24.dp)
                             .fillMaxWidth(),
                         color = MaterialTheme.colorScheme.surface,
                         tonalElevation = 1.dp,
@@ -204,7 +204,7 @@ fun HomeScreen(
                 } else {
                     Surface(
                         modifier = Modifier
-                            .padding(horizontal = 20.dp)
+                            .padding(horizontal = 24.dp)
                             .fillMaxWidth(),
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                         shape = RoundedCornerShape(16.dp)
@@ -413,7 +413,7 @@ private fun HeroPageMonth(monthTotal: Double) {
             style = MaterialTheme.typography.displayLarge.copy(fontSize = 52.sp),
             color = MaterialTheme.colorScheme.primary
         )
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(28.dp))
     }
 }
 
@@ -552,7 +552,7 @@ private fun SectionHeaderWithAction(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = 24.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -592,7 +592,7 @@ private fun SectionHeaderWithTwoActions(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = 24.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -711,7 +711,7 @@ private fun DiaryPreviewCard(
 ) {
     Surface(
         modifier = Modifier
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = 24.dp)
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
             .clickable(onClick = onClick),
@@ -719,7 +719,7 @@ private fun DiaryPreviewCard(
         tonalElevation = 1.dp,
         shape = RoundedCornerShape(20.dp)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(24.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,

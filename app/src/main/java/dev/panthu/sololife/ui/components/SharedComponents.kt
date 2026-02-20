@@ -32,7 +32,7 @@ fun DateGroupHeader(millis: Long, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 8.dp),
+            .padding(horizontal = 24.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -105,7 +105,7 @@ fun SwipeToDeleteContainer(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 20.dp, vertical = 6.dp)
+                    .padding(horizontal = 24.dp, vertical = 6.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .background(color),
                 contentAlignment = Alignment.CenterEnd
@@ -114,7 +114,7 @@ fun SwipeToDeleteContainer(
                     imageVector = Icons.Rounded.Delete,
                     contentDescription = "Delete",
                     tint = MaterialTheme.colorScheme.onError,
-                    modifier = Modifier.padding(end = 20.dp)
+                    modifier = Modifier.padding(end = 24.dp)
                 )
             }
         },
@@ -129,7 +129,7 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier) {
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         letterSpacing = MaterialTheme.typography.labelSmall.letterSpacing,
-        modifier = modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+        modifier = modifier.padding(horizontal = 24.dp, vertical = 12.dp)
     )
 }
 
@@ -201,10 +201,10 @@ fun <T> SwipeActionsContainer(
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 20.dp, vertical = 4.dp)
+                    .padding(horizontal = 24.dp, vertical = 4.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .background(color)
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = 24.dp),
                 horizontalArrangement = if (isEdit) Arrangement.Start else Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {

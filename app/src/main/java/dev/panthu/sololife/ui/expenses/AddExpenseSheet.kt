@@ -174,7 +174,7 @@ fun AddExpenseSheet(
                 )
             )
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(28.dp))
 
             // Add button
             Button(

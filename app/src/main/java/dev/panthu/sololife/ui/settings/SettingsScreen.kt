@@ -1,8 +1,10 @@
 package dev.panthu.sololife.ui.settings
 
+import android.Manifest
 import android.app.Application
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -11,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.FileUpload
+import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,8 +28,11 @@ import dev.panthu.sololife.SoloLifeApp
 import dev.panthu.sololife.data.db.DiaryEntry
 import dev.panthu.sololife.data.db.Expense
 import dev.panthu.sololife.util.DataTransfer
+import dev.panthu.sololife.util.DiaryNotificationScheduler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -43,6 +49,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     private val container   = app as SoloLifeApp
     private val diaryRepo   = container.diaryRepository
     private val expenseRepo = container.expenseRepository
+    private val prefs       = container.appPreferences
 
     val data = combine(
         diaryRepo.getAll(),
@@ -50,6 +57,19 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     ) { diary: List<DiaryEntry>, expenses: List<Expense> ->
         SettingsExportData(diary, expenses)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsExportData())
+
+    private val _notificationEnabled = MutableStateFlow(prefs.diaryNotificationEnabled)
+    val notificationEnabled = _notificationEnabled.asStateFlow()
+
+    fun setNotificationEnabled(enabled: Boolean, context: Context) {
+        prefs.diaryNotificationEnabled = enabled
+        _notificationEnabled.value = enabled
+        if (enabled) {
+            DiaryNotificationScheduler.schedule(context)
+        } else {
+            DiaryNotificationScheduler.cancel(context)
+        }
+    }
 
     fun export(context: Context, uri: Uri) {
         viewModelScope.launch {
@@ -97,6 +117,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
 fun SettingsScreen(vm: SettingsViewModel = viewModel()) {
     val context = LocalContext.current
     var showImportDialog by remember { mutableStateOf<Uri?>(null) }
+    val notificationEnabled by vm.notificationEnabled.collectAsState()
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
@@ -105,6 +126,14 @@ fun SettingsScreen(vm: SettingsViewModel = viewModel()) {
     val importLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri -> uri?.let { showImportDialog = it } }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            vm.setNotificationEnabled(true, context)
+        }
+    }
 
     val exportData by vm.data.collectAsState()
 
@@ -123,7 +152,7 @@ fun SettingsScreen(vm: SettingsViewModel = viewModel()) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+                .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Data summary
@@ -164,6 +193,64 @@ fun SettingsScreen(vm: SettingsViewModel = viewModel()) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
+
+            // Reminders section
+            Text(
+                "Reminders",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 2.dp,
+                shape = RoundedCornerShape(18.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Rounded.NotificationsActive,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Daily Journal Reminder",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            "Remind you to write at 10 PM",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = notificationEnabled,
+                        onCheckedChange = { enable ->
+                            if (enable) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    notificationPermissionLauncher.launch(
+                                        Manifest.permission.POST_NOTIFICATIONS
+                                    )
+                                } else {
+                                    vm.setNotificationEnabled(true, context)
+                                }
+                            } else {
+                                vm.setNotificationEnabled(false, context)
+                            }
+                        }
+                    )
                 }
             }
 
@@ -238,7 +325,7 @@ private fun SettingsActionCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.primary) {

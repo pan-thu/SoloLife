@@ -5,14 +5,20 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.panthu.sololife.SoloLifeApp
 import dev.panthu.sololife.data.db.DiaryEntry
+import dev.panthu.sololife.util.DateUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+enum class DiaryViewMode { LIST, CALENDAR }
+
 data class DiaryListUiState(
     val entries: List<DiaryEntry> = emptyList(),
-    val isSearchActive: Boolean = false,
-    val query: String = ""
+    val query: String = "",
+    val isLoaded: Boolean = false,
+    val viewMode: DiaryViewMode = DiaryViewMode.LIST,
+    val calendarEntryDates: Set<Long> = emptySet(),
+    val currentStreak: Int = 0
 )
 
 class DiaryViewModel(app: Application) : AndroidViewModel(app) {
@@ -21,11 +27,41 @@ class DiaryViewModel(app: Application) : AndroidViewModel(app) {
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
 
+    private val _viewMode = MutableStateFlow(DiaryViewMode.LIST)
+
+    fun toggleViewMode() {
+        _viewMode.value = if (_viewMode.value == DiaryViewMode.LIST) DiaryViewMode.CALENDAR else DiaryViewMode.LIST
+    }
+
+    private fun currentMonthStart(): Long {
+        val zone = java.time.ZoneId.systemDefault()
+        val first = java.time.LocalDate.now(zone).withDayOfMonth(1)
+        return first.atStartOfDay(zone).toInstant().toEpochMilli()
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
-    val uiState: StateFlow<DiaryListUiState> = _query.flatMapLatest { q ->
-        if (q.isBlank()) repo.getAll() else repo.search(q)
-    }.map { entries ->
-        DiaryListUiState(entries = entries, query = _query.value)
+    val uiState: StateFlow<DiaryListUiState> = combine(
+        _query.flatMapLatest { q ->
+            if (q.isBlank()) repo.getAll() else repo.search(q)
+        },
+        _viewMode,
+        run {
+            val monthStart = currentMonthStart()
+            val monthEnd = monthStart + 31 * 86_400_000L
+            repo.getEntryDatesInRange(monthStart, monthEnd)
+        },
+        repo.getAll()
+    ) { filteredEntries, viewMode, monthDates, allEntries ->
+        val entryDaySet = monthDates.map { DateUtils.dayStart(it) }.toSet()
+        val streak = DateUtils.currentStreak(allEntries.map { it.date })
+        DiaryListUiState(
+            entries = filteredEntries,
+            query = _query.value,
+            isLoaded = true,
+            viewMode = viewMode,
+            calendarEntryDates = entryDaySet,
+            currentStreak = streak
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DiaryListUiState())
 
     fun setQuery(q: String) { _query.value = q }
@@ -40,20 +76,20 @@ class DiaryViewModel(app: Application) : AndroidViewModel(app) {
         id: Long?,
         title: String,
         content: String,
-        date: Long
+        date: Long,
+        imageUris: String = ""
     ) {
         if (id == null) {
-            repo.save(DiaryEntry(date = date, title = title, content = content))
+            repo.save(DiaryEntry(date = date, title = title, content = content, imageUris = imageUris))
         } else {
             val existing = repo.getById(id) ?: return
-            repo.update(
-                existing.copy(
-                    title = title,
-                    content = content,
-                    date = date,
-                    updatedAt = System.currentTimeMillis()
-                )
-            )
+            repo.update(existing.copy(
+                title = title,
+                content = content,
+                date = date,
+                imageUris = imageUris,
+                updatedAt = System.currentTimeMillis()
+            ))
         }
     }
 }

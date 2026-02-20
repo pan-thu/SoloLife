@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.panthu.sololife.SoloLifeApp
+import dev.panthu.sololife.data.db.DailyTotal
 import dev.panthu.sololife.data.db.DiaryEntry
 import dev.panthu.sololife.data.db.Expense
 import dev.panthu.sololife.data.db.ExpenseCategory
@@ -18,7 +19,8 @@ data class HomeUiState(
     val weekTotal: Double = 0.0,
     val monthTotal: Double = 0.0,
     val latestDiaryEntry: DiaryEntry? = null,
-    val recentExpenses: List<Expense> = emptyList()
+    val recentExpenses: List<Expense> = emptyList(),
+    val weekDailyTotals: List<DailyTotal> = emptyList()
 )
 
 class HomeViewModel(app: Application) : AndroidViewModel(app) {
@@ -45,18 +47,24 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     val uiState: StateFlow<HomeUiState> = combine(
-        expenseRepo.todayTotal(DateUtils.todayStart(), DateUtils.todayEnd()),
-        expenseRepo.weekTotal(DateUtils.weekStart(), DateUtils.weekEnd()),
-        expenseRepo.weekTotal(monthStart(), monthEnd()),
-        diaryRepo.getAll().map { it.firstOrNull() },
-        expenseRepo.getAll().map { it.take(5) }
-    ) { today: Double, week: Double, month: Double, latest: DiaryEntry?, recent: List<Expense> ->
-        HomeUiState(
-            todayTotal = today,
-            weekTotal = week,
-            monthTotal = month,
-            latestDiaryEntry = latest,
-            recentExpenses = recent
-        )
+        combine(
+            expenseRepo.todayTotal(DateUtils.todayStart(), DateUtils.todayEnd()),
+            expenseRepo.weekTotal(DateUtils.weekStart(), DateUtils.weekEnd()),
+            expenseRepo.weekTotal(monthStart(), monthEnd()),
+            diaryRepo.getAll().map { it.firstOrNull() },
+            expenseRepo.getAll().map { it.take(5) }
+        ) { today, week, month, latest, recent ->
+            HomeUiState(
+                todayTotal = today,
+                weekTotal = week,
+                monthTotal = month,
+                latestDiaryEntry = latest,
+                recentExpenses = recent
+            )
+        },
+        expenseRepo.dailyTotals(DateUtils.weekStart(), DateUtils.weekEnd())
+            .map { DateUtils.fillWeekDailyTotals(DateUtils.weekStart(), it) }
+    ) { state, sparkline ->
+        state.copy(weekDailyTotals = sparkline)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 }

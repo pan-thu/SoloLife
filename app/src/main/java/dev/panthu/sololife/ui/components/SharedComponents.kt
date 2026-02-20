@@ -1,18 +1,23 @@
 package dev.panthu.sololife.ui.components
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.panthu.sololife.util.DateUtils
@@ -134,5 +139,85 @@ fun AmountText(
         style = style,
         color = color,
         fontWeight = FontWeight.SemiBold
+    )
+}
+
+@Composable
+fun AnimatedAmountText(amount: Double, style: TextStyle, color: Color) {
+    val animated by animateFloatAsState(
+        targetValue = amount.toFloat(),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "amountCounter"
+    )
+    Text(
+        text = "$${"%.2f".format(animated)}",
+        style = style,
+        color = color,
+        fontWeight = FontWeight.ExtraBold
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun <T> SwipeActionsContainer(
+    item: T,
+    onDelete: () -> Unit,
+    onEdit: (T) -> Unit,
+    content: @Composable RowScope.() -> Unit
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            when (value) {
+                SwipeToDismissBoxValue.StartToEnd -> { onEdit(item); false }
+                SwipeToDismissBoxValue.EndToStart -> { onDelete(); true }
+                else -> false
+            }
+        }
+    )
+    SwipeToDismissBox(
+        state = dismissState,
+        enableDismissFromStartToEnd = true,
+        enableDismissFromEndToStart = true,
+        backgroundContent = {
+            val targetColor = when (dismissState.targetValue) {
+                SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
+                else -> Color.Transparent
+            }
+            val color by animateColorAsState(
+                targetValue = targetColor,
+                animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                label = "swipeBg"
+            )
+            val isEdit = dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp, vertical = 4.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(color)
+                    .padding(horizontal = 20.dp),
+                horizontalArrangement = if (isEdit) Arrangement.Start else Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isEdit) {
+                    Icon(
+                        imageVector = Icons.Rounded.Edit,
+                        contentDescription = "Edit",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Rounded.Delete,
+                        contentDescription = "Delete",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        },
+        content = content
     )
 }

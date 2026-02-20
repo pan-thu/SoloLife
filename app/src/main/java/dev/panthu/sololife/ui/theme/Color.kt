@@ -3,10 +3,10 @@ package dev.panthu.sololife.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // ── Dark theme palette ────────────────────────────────────────────────────────
-val DarkBackground    = Color(0xFF0E1014)
-val DarkSurface       = Color(0xFF1A1D23)
-val DarkSurfaceVar    = Color(0xFF252830)
-val DarkOutline       = Color(0xFF3A3D47)
+val DarkBackground    = Color(0xFF070B0F)
+val DarkSurface       = Color(0xFF0F1319)
+val DarkSurfaceVar    = Color(0xFF171D25)
+val DarkOutline       = Color(0xFF2C3140)
 
 val PrimaryDark       = Color(0xFF7DD3A8)
 val OnPrimaryDark     = Color(0xFF0E2D20)

@@ -15,7 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.AutoStories
-import androidx.compose.material.icons.rounded.EditNote
+import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -71,7 +71,7 @@ private data class NavItem(
 @Composable
 private fun AnimatedBottomNav(navController: NavHostController) {
     val navItems = listOf(
-        NavItem(Screen.Home,     "Home",     Icons.Rounded.EditNote),
+        NavItem(Screen.Home,     "Home",     Icons.Rounded.Home),
         NavItem(Screen.Diary,    "Journal",  Icons.Rounded.AutoStories),
         NavItem(Screen.Expenses, "Expenses", Icons.Rounded.AccountBalanceWallet),
         NavItem(Screen.Settings, "Settings", Icons.Rounded.Tune)

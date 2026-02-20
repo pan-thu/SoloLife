@@ -38,7 +38,14 @@ class NotificationWorker(ctx: Context, params: WorkerParameters) : CoroutineWork
             .setAutoCancel(true)
             .build()
 
-        NotificationManagerCompat.from(applicationContext).notify(NOTIFICATION_ID, notification)
+        val manager = NotificationManagerCompat.from(applicationContext)
+        if (manager.areNotificationsEnabled()) {
+            try {
+                manager.notify(NOTIFICATION_ID, notification)
+            } catch (_: SecurityException) {
+                // Permission was revoked between schedule and execution — silently skip
+            }
+        }
 
         return Result.success()
     }

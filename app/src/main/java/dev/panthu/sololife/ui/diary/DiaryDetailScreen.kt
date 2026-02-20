@@ -61,6 +61,8 @@ fun DiaryDetailScreen(
     var loaded by remember { mutableStateOf(entryId == null) }
     var showDatePicker by remember { mutableStateOf(false) }
     var imagePaths by remember { mutableStateOf<List<String>>(emptyList()) }
+    // Paths staged for deletion — only deleted from disk inside save()
+    var pendingDeletes by remember { mutableStateOf<List<String>>(emptyList()) }
 
     // Load existing entry
     LaunchedEffect(entryId) {
@@ -71,7 +73,12 @@ fun DiaryDetailScreen(
                 return@LaunchedEffect
             }
             title = entry.title
-            richTextState.setHtml(entry.content)
+            // Backward compat: old entries contain plain text, new ones HTML
+            if (entry.content.trimStart().startsWith("<")) {
+                richTextState.setHtml(entry.content)
+            } else {
+                richTextState.setText(entry.content)
+            }
             date = entry.date
             imagePaths = parseUris(entry.imageUris)
             loaded = true
@@ -97,6 +104,8 @@ fun DiaryDetailScreen(
         }
         scope.launch {
             vm.save(entryId, title.trim(), content, date, encodeUris(imagePaths))
+            // Only delete files after the entry is safely persisted
+            pendingDeletes.forEach { deleteImage(it) }
             onBack()
         }
     }
@@ -173,7 +182,6 @@ fun DiaryDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .imePadding()
         ) {
             // Image thumbnail strip
             if (imagePaths.isNotEmpty()) {
@@ -186,8 +194,8 @@ fun DiaryDetailScreen(
                             path = path,
                             context = context,
                             onDelete = {
-                                deleteImage(path)
                                 imagePaths = imagePaths - path
+                                pendingDeletes = pendingDeletes + path
                             }
                         )
                     }

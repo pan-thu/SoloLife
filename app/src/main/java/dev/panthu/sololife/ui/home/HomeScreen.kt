@@ -41,7 +41,7 @@ import dev.panthu.sololife.data.db.DailyTotal
 import dev.panthu.sololife.data.db.Expense
 import dev.panthu.sololife.ui.components.AmountText
 import dev.panthu.sololife.ui.components.AnimatedAmountText
-import dev.panthu.sololife.ui.expenses.AddExpenseSheet
+import dev.panthu.sololife.ui.expenses.ExpenseFormSheet
 import dev.panthu.sololife.util.DateUtils
 import dev.panthu.sololife.util.info
 import dev.panthu.sololife.util.toExpenseCategory
@@ -229,9 +229,10 @@ fun HomeScreen(
 
     // Expense sheet — hosted on top of HomeScreen, no navigation needed
     if (showExpenseSheet) {
-        AddExpenseSheet(
+        ExpenseFormSheet(
+            expense = null,
             onDismiss = { showExpenseSheet = false },
-            onAdd = { amount, category, description, date ->
+            onSave = { amount, category, description, date ->
                 vm.addExpense(amount, category, description, date)
             }
         )
@@ -768,7 +769,7 @@ private fun DiaryPreviewCard(
                 )
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    text = entry.content,
+                    text = entry.content.replace(Regex("<[^>]*>"), "").trim(),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 3,

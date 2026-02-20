@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,6 +32,7 @@ import dev.panthu.sololife.ui.components.DiaryEmptyState
 import dev.panthu.sololife.ui.components.ShimmerDiaryCard
 import dev.panthu.sololife.ui.components.SwipeActionsContainer
 import dev.panthu.sololife.util.DateUtils
+import dev.panthu.sololife.util.hapticConfirm
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -44,6 +46,7 @@ fun DiaryListScreen(
     vm: DiaryViewModel = viewModel()
 ) {
     val state by vm.uiState.collectAsState()
+    val view = LocalView.current
 
     Scaffold(
         topBar = {
@@ -94,7 +97,7 @@ fun DiaryListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onNewEntry,
+                onClick = { view.hapticConfirm(); onNewEntry() },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = RoundedCornerShape(16.dp)

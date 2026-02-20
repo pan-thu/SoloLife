@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -23,6 +24,7 @@ import dev.panthu.sololife.ui.components.ExpensesEmptyState
 import dev.panthu.sololife.ui.components.ShimmerExpenseCard
 import dev.panthu.sololife.ui.components.SwipeActionsContainer
 import dev.panthu.sololife.util.DateUtils
+import dev.panthu.sololife.util.hapticConfirm
 import dev.panthu.sololife.util.info
 import dev.panthu.sololife.util.toExpenseCategory
 import java.util.Calendar
@@ -32,6 +34,7 @@ import java.util.Calendar
 fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
     val state by vm.uiState.collectAsState()
     var showSheet by remember { mutableStateOf(false) }
+    val view = LocalView.current
 
     Scaffold(
         topBar = {
@@ -44,7 +47,7 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showSheet = true },
+                onClick = { view.hapticConfirm(); showSheet = true },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = RoundedCornerShape(16.dp)

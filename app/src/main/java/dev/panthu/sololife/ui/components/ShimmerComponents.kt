@@ -135,8 +135,8 @@ fun ShimmerExpenseCard(modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
-            .shimmer()
             .clip(RoundedCornerShape(16.dp))
+            .shimmer()
             .background(MaterialTheme.colorScheme.surface)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically

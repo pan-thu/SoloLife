@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -27,6 +28,8 @@ import dev.panthu.sololife.data.db.Expense
 import dev.panthu.sololife.data.db.ExpenseCategory
 import dev.panthu.sololife.util.CategoryInfo
 import dev.panthu.sololife.util.DateUtils
+import dev.panthu.sololife.util.hapticConfirm
+import dev.panthu.sololife.util.hapticTick
 import dev.panthu.sololife.util.info
 import dev.panthu.sololife.util.toExpenseCategory
 
@@ -47,6 +50,7 @@ fun ExpenseFormSheet(
     val isEditMode = expense != null
     val title = if (isEditMode) "Edit Expense" else "Add Expense"
     val buttonLabel = if (isEditMode) "Save Changes" else "Add Expense"
+    val view = LocalView.current
 
     // Delay focus request so the sheet window finishes initializing before the keyboard appears,
     // preventing a FocusEvent ANR on the main thread.
@@ -158,7 +162,7 @@ fun ExpenseFormSheet(
                     CategoryPill(
                         info = info,
                         isSelected = isSelected,
-                        onClick = { selectedCategory = category }
+                        onClick = { view.hapticTick(); selectedCategory = category }
                     )
                 }
             }
@@ -187,6 +191,7 @@ fun ExpenseFormSheet(
             Button(
                 onClick = {
                     val amount = amountText.toDoubleOrNull() ?: return@Button
+                    view.hapticConfirm()
                     onSave(amount, selectedCategory, description.trim(), date)
                     onDismiss()
                 },

@@ -19,12 +19,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.panthu.sololife.data.db.Expense
 import dev.panthu.sololife.data.db.ExpenseCategory
 import dev.panthu.sololife.util.DateUtils
+import dev.panthu.sololife.util.hapticReject
+import dev.panthu.sololife.util.hapticTick
 import dev.panthu.sololife.util.info
 
 @Composable
@@ -173,11 +176,12 @@ fun <T> SwipeActionsContainer(
     onEdit: (T) -> Unit,
     content: @Composable RowScope.() -> Unit
 ) {
+    val view = LocalView.current
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
             when (value) {
-                SwipeToDismissBoxValue.StartToEnd -> { onEdit(item); false }
-                SwipeToDismissBoxValue.EndToStart -> { onDelete(); true }
+                SwipeToDismissBoxValue.StartToEnd -> { view.hapticTick(); onEdit(item); false }
+                SwipeToDismissBoxValue.EndToStart -> { view.hapticReject(); onDelete(); true }
                 else -> false
             }
         }

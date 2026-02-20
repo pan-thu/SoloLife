@@ -39,6 +39,13 @@ class DiaryViewModel(app: Application) : AndroidViewModel(app) {
         return first.atStartOfDay(zone).toInstant().toEpochMilli()
     }
 
+    private fun currentMonthEnd(): Long {
+        val zone = java.time.ZoneId.systemDefault()
+        val today = java.time.LocalDate.now(zone)
+        val last = today.withDayOfMonth(today.lengthOfMonth())
+        return last.atTime(23, 59, 59).atZone(zone).toInstant().toEpochMilli()
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<DiaryListUiState> = combine(
         _query.flatMapLatest { q ->
@@ -46,9 +53,7 @@ class DiaryViewModel(app: Application) : AndroidViewModel(app) {
         },
         _viewMode,
         run {
-            val monthStart = currentMonthStart()
-            val monthEnd = monthStart + 31 * 86_400_000L
-            repo.getEntryDatesInRange(monthStart, monthEnd)
+            repo.getEntryDatesInRange(currentMonthStart(), currentMonthEnd())
         },
         repo.getAll()
     ) { filteredEntries, viewMode, monthDates, allEntries ->

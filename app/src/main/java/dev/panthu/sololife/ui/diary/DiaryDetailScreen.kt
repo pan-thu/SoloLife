@@ -256,8 +256,6 @@ fun DiaryDetailScreen(
                 },
                 colors = RichTextEditorDefaults.richTextEditorColors(
                     containerColor = Color.Transparent,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                     cursorColor = MaterialTheme.colorScheme.primary

@@ -7,6 +7,8 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
@@ -20,7 +22,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.panthu.sololife.data.db.Expense
+import dev.panthu.sololife.data.db.ExpenseCategory
 import dev.panthu.sololife.util.DateUtils
+import dev.panthu.sololife.util.info
 
 @Composable
 fun DateGroupHeader(millis: Long, modifier: Modifier = Modifier) {
@@ -220,4 +225,74 @@ fun <T> SwipeActionsContainer(
         },
         content = content
     )
+}
+
+@Composable
+fun CategoryBreakdownBar(
+    allExpenses: List<Expense>,
+    selectedCategory: ExpenseCategory?,
+    onCategorySelected: (ExpenseCategory?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (allExpenses.isEmpty()) return
+
+    // Calculate per-category totals
+    val categoryTotals = ExpenseCategory.entries.mapNotNull { cat ->
+        val total = allExpenses.filter { it.category == cat.name }.sumOf { it.amount }
+        if (total > 0.0) cat to total else null
+    }
+    val grandTotal = categoryTotals.sumOf { it.second }
+    if (grandTotal == 0.0) return
+
+    Column(modifier = modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
+        // Segmented bar
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(RoundedCornerShape(5.dp))
+        ) {
+            categoryTotals.forEachIndexed { index, (cat, total) ->
+                val fraction = (total / grandTotal).toFloat()
+                val isSelected = selectedCategory == null || selectedCategory == cat
+                Box(
+                    modifier = Modifier
+                        .weight(fraction)
+                        .fillMaxHeight()
+                        .background(
+                            if (isSelected) cat.info().color
+                            else cat.info().color.copy(alpha = 0.3f)
+                        )
+                        .then(
+                            if (index < categoryTotals.lastIndex)
+                                Modifier.padding(end = 2.dp) else Modifier
+                        )
+                )
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        // Filter chips
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(categoryTotals) { (cat, _) ->
+                val isSelected = selectedCategory == cat
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { onCategorySelected(if (isSelected) null else cat) },
+                    label = { Text(cat.info().label, style = MaterialTheme.typography.labelSmall) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = cat.info().color.copy(alpha = 0.2f),
+                        selectedLabelColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = isSelected,
+                        selectedBorderColor = cat.info().color,
+                        selectedBorderWidth = 1.5.dp
+                    )
+                )
+            }
+        }
+    }
 }

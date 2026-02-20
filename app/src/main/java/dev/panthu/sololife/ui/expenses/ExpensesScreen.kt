@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,11 +18,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.panthu.sololife.data.db.Expense
 import dev.panthu.sololife.ui.components.AmountText
-import dev.panthu.sololife.ui.components.EmptyState
-import dev.panthu.sololife.ui.components.SwipeToDeleteContainer
-import dev.panthu.sololife.util.toExpenseCategory
+import dev.panthu.sololife.ui.components.CategoryBreakdownBar
+import dev.panthu.sololife.ui.components.ExpensesEmptyState
+import dev.panthu.sololife.ui.components.ShimmerExpenseCard
+import dev.panthu.sololife.ui.components.SwipeActionsContainer
 import dev.panthu.sololife.util.DateUtils
 import dev.panthu.sololife.util.info
+import dev.panthu.sololife.util.toExpenseCategory
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,12 +62,20 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
             // Week summary header
             WeekSummaryCard(weekTotal = state.weekTotal)
 
-            if (state.expenses.isEmpty()) {
-                EmptyState(
-                    icon = { Icon(Icons.AutoMirrored.Rounded.ReceiptLong, contentDescription = null, Modifier.size(52.dp)) },
-                    title = "No expenses yet",
-                    subtitle = "Tap + to record your first expense"
+            // Category breakdown bar (shown when there are expenses)
+            if (state.allExpenses.isNotEmpty()) {
+                CategoryBreakdownBar(
+                    allExpenses = state.allExpenses,
+                    selectedCategory = state.filterCategory,
+                    onCategorySelected = { vm.setFilterCategory(it) }
                 )
+                Spacer(Modifier.height(8.dp))
+            }
+
+            if (!state.isLoaded) {
+                repeat(5) { ShimmerExpenseCard() }
+            } else if (state.expenses.isEmpty()) {
+                ExpensesEmptyState()
             } else {
                 val grouped = remember(state.expenses) { state.expenses.groupByDay() }
 
@@ -79,7 +88,11 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
                             DayHeader(millis = dayKey, expenses = dayExpenses)
                         }
                         items(dayExpenses, key = { it.id }) { expense ->
-                            SwipeToDeleteContainer(onDelete = { vm.delete(expense) }) {
+                            SwipeActionsContainer(
+                                item = expense,
+                                onDelete = { vm.delete(expense) },
+                                onEdit = { vm.setEditingExpense(it) }
+                            ) {
                                 ExpenseRow(expense = expense)
                             }
                         }
@@ -89,11 +102,25 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
         }
     }
 
+    // Add expense sheet
     if (showSheet) {
-        AddExpenseSheet(
+        ExpenseFormSheet(
+            expense = null,
             onDismiss = { showSheet = false },
-            onAdd = { amount, category, description, date ->
+            onSave = { amount, category, description, date ->
                 vm.addExpense(amount, category, description, date)
+            }
+        )
+    }
+
+    // Edit expense sheet
+    state.editingExpense?.let { editingExpense ->
+        ExpenseFormSheet(
+            expense = editingExpense,
+            onDismiss = { vm.setEditingExpense(null) },
+            onSave = { amount, category, description, date ->
+                vm.updateExpense(editingExpense.copy(amount = amount, category = category.name, description = description, date = date))
+                vm.setEditingExpense(null)
             }
         )
     }
@@ -148,8 +175,7 @@ private fun DayHeader(millis: Long, expenses: List<Expense>) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = if (DateUtils.isSameDay(millis, System.currentTimeMillis()))
-                "Today" else DateUtils.formatFull(millis),
+            text = DateUtils.formatRelative(millis),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.SemiBold
@@ -163,59 +189,72 @@ private fun ExpenseRow(expense: Expense) {
     val category = expense.category.toExpenseCategory()
     val info = category.info()
 
-    Surface(
+    Row(
         modifier = Modifier
             .padding(horizontal = 16.dp, vertical = 4.dp)
-            .fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
-        shape = RoundedCornerShape(16.dp)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
     ) {
-        Row(
+        // 3dp colored left border
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .width(3.dp)
+                .fillMaxHeight()
+                .background(info.color, RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp))
+        )
+
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 1.dp,
+            shape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
         ) {
-            // Category icon circle
-            Box(
+            Row(
                 modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(info.color.copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = info.icon,
-                    contentDescription = null,
-                    tint = info.color,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            Spacer(Modifier.width(14.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = if (expense.description.isBlank()) info.label else expense.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1
-                )
-                if (expense.description.isNotBlank()) {
-                    Text(
-                        text = info.label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = info.color
+                // Category icon circle
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(info.color.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = info.icon,
+                        contentDescription = null,
+                        tint = info.color,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
-            }
 
-            AmountText(
-                amount = expense.amount,
-                style = MaterialTheme.typography.titleMedium
-            )
+                Spacer(Modifier.width(14.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (expense.description.isBlank()) info.label else expense.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1
+                    )
+                    if (expense.description.isNotBlank()) {
+                        Text(
+                            text = info.label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = info.color
+                        )
+                    }
+                }
+
+                AmountText(
+                    amount = expense.amount,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
         }
     }
 }

@@ -26,4 +26,7 @@ class DiaryRepository(private val dao: DiaryDao) {
     }
 
     suspend fun mergeAll(entries: List<DiaryEntry>) = dao.insertAll(entries)
+
+    fun getEntryDatesInRange(fromMillis: Long, toMillis: Long): Flow<List<Long>> =
+        dao.getEntryDatesInRange(fromMillis, toMillis)
 }

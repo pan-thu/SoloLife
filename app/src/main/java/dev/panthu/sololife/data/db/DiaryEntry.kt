@@ -16,5 +16,6 @@ data class DiaryEntry(
     val title: String,
     val content: String,
     val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+    val imageUris: String = ""
 )

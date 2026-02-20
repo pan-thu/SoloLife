@@ -32,4 +32,7 @@ interface DiaryDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(entries: List<DiaryEntry>)
+
+    @Query("SELECT date FROM diary_entries WHERE date >= :fromMillis AND date <= :toMillis")
+    fun getEntryDatesInRange(fromMillis: Long, toMillis: Long): Flow<List<Long>>
 }

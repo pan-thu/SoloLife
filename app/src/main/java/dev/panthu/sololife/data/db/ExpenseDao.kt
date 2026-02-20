@@ -29,4 +29,14 @@ interface ExpenseDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(expenses: List<Expense>)
+
+    @Query("""
+        SELECT (date / 86400000) * 86400000 AS dayStart, COALESCE(SUM(amount), 0.0) AS total
+        FROM expenses WHERE date >= :fromMillis AND date <= :toMillis
+        GROUP BY dayStart ORDER BY dayStart ASC
+    """)
+    fun dailyTotals(fromMillis: Long, toMillis: Long): Flow<List<DailyTotal>>
+
+    @Update
+    suspend fun update(expense: Expense)
 }

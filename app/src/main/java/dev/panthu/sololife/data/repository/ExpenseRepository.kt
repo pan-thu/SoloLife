@@ -1,5 +1,6 @@
 package dev.panthu.sololife.data.repository
 
+import dev.panthu.sololife.data.db.DailyTotal
 import dev.panthu.sololife.data.db.Expense
 import dev.panthu.sololife.data.db.ExpenseDao
 import kotlinx.coroutines.flow.Flow
@@ -27,4 +28,9 @@ class ExpenseRepository(private val dao: ExpenseDao) {
     }
 
     suspend fun mergeAll(expenses: List<Expense>) = dao.insertAll(expenses)
+
+    fun dailyTotals(fromMillis: Long, toMillis: Long): Flow<List<DailyTotal>> =
+        dao.dailyTotals(fromMillis, toMillis)
+
+    suspend fun update(expense: Expense) = dao.update(expense)
 }

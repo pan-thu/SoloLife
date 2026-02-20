@@ -1,10 +1,13 @@
 package dev.panthu.sololife.util
 
+import dev.panthu.sololife.data.db.DailyTotal
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
 import java.util.Locale
 
 object DateUtils {
@@ -45,5 +48,50 @@ object DateUtils {
         val da = Instant.ofEpochMilli(a).atZone(za).toLocalDate()
         val db = Instant.ofEpochMilli(b).atZone(za).toLocalDate()
         return da == db
+    }
+
+    fun greetingPrefix(): String {
+        val h = LocalTime.now().hour
+        return when { h < 12 -> "Good morning"; h < 17 -> "Good afternoon"; else -> "Good evening" }
+    }
+
+    fun dayStart(millis: Long): Long {
+        val date = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
+        return date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    }
+
+    fun formatRelative(millis: Long): String {
+        val zone = ZoneId.systemDefault()
+        val date = Instant.ofEpochMilli(millis).atZone(zone).toLocalDate()
+        val today = LocalDate.now(zone)
+        return when {
+            date == today -> "Today"
+            date == today.minusDays(1) -> "Yesterday"
+            date > today.minusDays(7) -> date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
+            else -> fmtShort.format(date)
+        }
+    }
+
+    fun currentStreak(dates: List<Long>): Int {
+        if (dates.isEmpty()) return 0
+        val zone = ZoneId.systemDefault()
+        val entryDays = dates.map {
+            Instant.ofEpochMilli(it).atZone(zone).toLocalDate()
+        }.toSet()
+        var count = 0
+        var day = LocalDate.now(zone)
+        while (entryDays.contains(day)) {
+            count++
+            day = day.minusDays(1)
+        }
+        return count
+    }
+
+    fun fillWeekDailyTotals(weekStart: Long, dbRows: List<DailyTotal>): List<DailyTotal> {
+        val rowMap = dbRows.associateBy { it.dayStart }
+        return (0 until 7).map { i ->
+            val dayStartMs = weekStart + i * 86_400_000L
+            rowMap[dayStartMs] ?: DailyTotal(dayStartMs, 0.0)
+        }
     }
 }

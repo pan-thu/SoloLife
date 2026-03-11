@@ -60,7 +60,7 @@ fun HomeScreen(
 
         AmbientOrbs(primary = primary, tertiary = tertiary)
 
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
 
             GreetingHeader(visible = visible, pagerState = pagerState, primary = primary)
 
@@ -538,7 +538,7 @@ private fun WaterTankCard(
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                text = "$${"%.2f".format(animated)}",
+                text = "฿${"%.2f".format(animated)}",
                 style = MaterialTheme.typography.displaySmall.copy(
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = (-1.5).sp
@@ -765,7 +765,7 @@ private fun MetricBentoCard(
 
             // Current amount
             Text(
-                "$${"%.2f".format(animAmount)}",
+                "฿${"%.2f".format(animAmount)}",
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = (-0.5).sp
@@ -776,7 +776,7 @@ private fun MetricBentoCard(
 
         // Last period — bottom right, above the accent line
         Text(
-            if (hasPrev) "$${"%.2f".format(animLast)} last $periodLabel" else "— last $periodLabel",
+            if (hasPrev) "฿${"%.2f".format(animLast)} last $periodLabel" else "— last $periodLabel",
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
             color = onSurfaceVariant.copy(alpha = if (hasPrev) 0.90f else 0.50f),
             modifier = Modifier
@@ -859,7 +859,7 @@ private fun ExpenseChip(expense: Expense) {
             )
             Spacer(Modifier.height(3.dp))
             Text(
-                "$${"%.2f".format(expense.amount)}",
+                "฿${"%.2f".format(expense.amount)}",
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = (-0.5).sp

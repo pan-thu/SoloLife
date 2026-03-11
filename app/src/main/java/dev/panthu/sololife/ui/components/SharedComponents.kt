@@ -143,7 +143,7 @@ fun AmountText(
     color: Color = MaterialTheme.colorScheme.tertiary
 ) {
     Text(
-        text = "$${"%.2f".format(amount)}",
+        text = "฿${"%.2f".format(amount)}",
         style = style,
         color = color,
         fontWeight = FontWeight.SemiBold
@@ -161,7 +161,7 @@ fun AnimatedAmountText(amount: Double, style: TextStyle, color: Color) {
         label = "amountCounter"
     )
     Text(
-        text = "$${"%.2f".format(animated)}",
+        text = "฿${"%.2f".format(animated)}",
         style = style,
         color = color,
         fontWeight = FontWeight.ExtraBold

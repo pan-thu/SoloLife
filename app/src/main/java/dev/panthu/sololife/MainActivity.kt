@@ -56,7 +56,7 @@ private fun MainContent() {
         bottomBar = { FloatingIslandNav(navController) },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        Box(modifier = Modifier.padding(innerPadding)) {
+        Box(modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
             AppNavigation(navController = navController)
         }
     }

@@ -86,7 +86,7 @@ fun AddExpenseSheet(
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "$",
+                        "฿",
                         style = MaterialTheme.typography.displayMedium,
                         color = MaterialTheme.colorScheme.tertiary,
                         fontWeight = FontWeight.Bold

@@ -15,7 +15,9 @@ suspend fun saveImage(context: Context, uri: Uri): String = withContext(Dispatch
         ?.takeIf { it.isNotBlank() }
         ?: "jpg"
     val dest = File(dir, "${UUID.randomUUID()}.$ext")
-    context.contentResolver.openInputStream(uri)!!.use { input ->
+    val inputStream = context.contentResolver.openInputStream(uri)
+        ?: error("Cannot open input stream for $uri")
+    inputStream.use { input ->
         dest.outputStream().use { output ->
             input.copyTo(output)
         }

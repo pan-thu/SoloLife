@@ -119,11 +119,9 @@ fun DiaryListScreen(
                     }
                 }
                 state.viewMode == DiaryViewMode.CALENDAR -> {
-                    val monthStart = remember {
-                        val zone = ZoneId.systemDefault()
-                        val first = LocalDate.now(zone).withDayOfMonth(1)
-                        first.atStartOfDay(zone).toInstant().toEpochMilli()
-                    }
+                    val zone = ZoneId.systemDefault()
+                    val monthStart = LocalDate.now(zone).withDayOfMonth(1)
+                        .atStartOfDay(zone).toInstant().toEpochMilli()
                     LazyColumn {
                         item {
                             DiaryCalendarView(

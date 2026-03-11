@@ -75,7 +75,7 @@ fun AppNavigation(navController: NavHostController) {
             popEnterTransition = { subPopEnter },
             popExitTransition = { subPopExit }
         ) { backStack ->
-            val id = backStack.arguments?.getLong("entryId")
+            val id = backStack.arguments!!.getLong("entryId")
             DiaryDetailScreen(entryId = id, onBack = { navController.popBackStack() })
         }
         composable(Screen.Expenses.route) {

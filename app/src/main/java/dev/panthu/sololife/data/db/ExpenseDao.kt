@@ -31,11 +31,13 @@ interface ExpenseDao {
     suspend fun insertAll(expenses: List<Expense>)
 
     @Query("""
-        SELECT (date / 86400000) * 86400000 AS dayStart, COALESCE(SUM(amount), 0.0) AS total
+        SELECT ((date + :tzOffsetMs) / 86400000) * 86400000 - :tzOffsetMs AS dayStart,
+               COALESCE(SUM(amount), 0.0) AS total
         FROM expenses WHERE date >= :fromMillis AND date <= :toMillis
-        GROUP BY (date / 86400000) * 86400000 ORDER BY dayStart ASC
+        GROUP BY (date + :tzOffsetMs) / 86400000
+        ORDER BY dayStart ASC
     """)
-    fun dailyTotals(fromMillis: Long, toMillis: Long): Flow<List<DailyTotal>>
+    fun dailyTotals(fromMillis: Long, toMillis: Long, tzOffsetMs: Long): Flow<List<DailyTotal>>
 
     @Update
     suspend fun update(expense: Expense)

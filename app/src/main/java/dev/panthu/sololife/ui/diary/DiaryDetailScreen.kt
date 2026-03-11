@@ -39,6 +39,9 @@ import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditorDefaults
 import dev.panthu.sololife.util.DateUtils
 import dev.panthu.sololife.util.deleteImage
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZoneOffset
 import dev.panthu.sololife.util.encodeUris
 import dev.panthu.sololife.util.parseUris
 import dev.panthu.sololife.util.pathToUri
@@ -63,6 +66,7 @@ fun DiaryDetailScreen(
     var imagePaths by remember { mutableStateOf<List<String>>(emptyList()) }
     // Paths staged for deletion — only deleted from disk inside save()
     var pendingDeletes by remember { mutableStateOf<List<String>>(emptyList()) }
+    var isSaving by remember { mutableStateOf(false) }
 
     // Load existing entry
     LaunchedEffect(entryId) {
@@ -97,11 +101,13 @@ fun DiaryDetailScreen(
     }
 
     fun save() {
+        if (isSaving) return
         val content = richTextState.toHtml()
         if (title.isBlank() && richTextState.annotatedString.text.isBlank()) {
             onBack()
             return
         }
+        isSaving = true
         scope.launch {
             vm.save(entryId, title.trim(), content, date, encodeUris(imagePaths))
             // Only delete files after the entry is safely persisted
@@ -271,7 +277,11 @@ fun DiaryDetailScreen(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    pickerState.selectedDateMillis?.let { date = it }
+                    pickerState.selectedDateMillis?.let { utcMillis ->
+                        // DatePicker returns UTC midnight; convert to local midnight
+                        val localDate = Instant.ofEpochMilli(utcMillis).atZone(ZoneOffset.UTC).toLocalDate()
+                        date = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    }
                     showDatePicker = false
                 }) { Text("OK") }
             },

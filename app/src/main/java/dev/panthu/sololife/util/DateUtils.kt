@@ -43,6 +43,21 @@ object DateUtils {
 
     fun weekEnd(): Long = weekStart() + 7 * 86_400_000L - 1L
 
+    fun lastWeekStart(): Long = weekStart() - 7 * 86_400_000L
+    fun lastWeekEnd(): Long   = weekStart() - 1L
+
+    fun lastMonthStart(): Long {
+        val zone = ZoneId.systemDefault()
+        val firstOfLastMonth = LocalDate.now(zone).withDayOfMonth(1).minusMonths(1)
+        return firstOfLastMonth.atStartOfDay(zone).toInstant().toEpochMilli()
+    }
+
+    fun lastMonthEnd(): Long {
+        val zone = ZoneId.systemDefault()
+        val firstOfThisMonth = LocalDate.now(zone).withDayOfMonth(1)
+        return firstOfThisMonth.atStartOfDay(zone).toInstant().toEpochMilli() - 1L
+    }
+
     fun isSameDay(a: Long, b: Long): Boolean {
         val za = ZoneId.systemDefault()
         val da = Instant.ofEpochMilli(a).atZone(za).toLocalDate()
@@ -88,9 +103,11 @@ object DateUtils {
     }
 
     fun fillWeekDailyTotals(weekStart: Long, dbRows: List<DailyTotal>): List<DailyTotal> {
+        val zone = ZoneId.systemDefault()
         val rowMap = dbRows.associateBy { it.dayStart }
+        val startDate = Instant.ofEpochMilli(weekStart).atZone(zone).toLocalDate()
         return (0 until 7).map { i ->
-            val dayStartMs = weekStart + i * 86_400_000L
+            val dayStartMs = startDate.plusDays(i.toLong()).atStartOfDay(zone).toInstant().toEpochMilli()
             rowMap[dayStartMs] ?: DailyTotal(dayStartMs, 0.0)
         }
     }

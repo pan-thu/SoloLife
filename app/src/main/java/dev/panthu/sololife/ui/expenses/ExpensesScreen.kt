@@ -47,7 +47,7 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { view.hapticConfirm(); showSheet = true },
+                onClick = { view.hapticConfirm(); vm.setEditingExpense(null); showSheet = true },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = RoundedCornerShape(16.dp)
@@ -94,7 +94,7 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
                             SwipeActionsContainer(
                                 item = expense,
                                 onDelete = { vm.delete(expense) },
-                                onEdit = { vm.setEditingExpense(it) }
+                                onEdit = { showSheet = false; vm.setEditingExpense(it) }
                             ) {
                                 ExpenseRow(expense = expense)
                             }

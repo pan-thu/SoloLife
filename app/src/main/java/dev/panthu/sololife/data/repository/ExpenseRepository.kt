@@ -1,11 +1,14 @@
 package dev.panthu.sololife.data.repository
 
+import androidx.room.withTransaction
 import dev.panthu.sololife.data.db.DailyTotal
 import dev.panthu.sololife.data.db.Expense
 import dev.panthu.sololife.data.db.ExpenseDao
+import dev.panthu.sololife.data.db.SoloLifeDatabase
 import kotlinx.coroutines.flow.Flow
 
-class ExpenseRepository(private val dao: ExpenseDao) {
+class ExpenseRepository(private val db: SoloLifeDatabase) {
+    private val dao: ExpenseDao = db.expenseDao()
 
     fun getAll(): Flow<List<Expense>> = dao.getAll()
 
@@ -23,14 +26,18 @@ class ExpenseRepository(private val dao: ExpenseDao) {
     suspend fun delete(expense: Expense) = dao.delete(expense)
 
     suspend fun replaceAll(expenses: List<Expense>) {
-        dao.deleteAll()
-        dao.insertAll(expenses)
+        db.withTransaction {
+            dao.deleteAll()
+            dao.insertAll(expenses)
+        }
     }
 
     suspend fun mergeAll(expenses: List<Expense>) = dao.insertAll(expenses)
 
-    fun dailyTotals(fromMillis: Long, toMillis: Long): Flow<List<DailyTotal>> =
-        dao.dailyTotals(fromMillis, toMillis)
+    fun dailyTotals(fromMillis: Long, toMillis: Long): Flow<List<DailyTotal>> {
+        val tzOffsetMs = java.util.TimeZone.getDefault().getOffset(System.currentTimeMillis()).toLong()
+        return dao.dailyTotals(fromMillis, toMillis, tzOffsetMs)
+    }
 
     suspend fun update(expense: Expense) = dao.update(expense)
 }

@@ -1,10 +1,13 @@
 package dev.panthu.sololife.data.repository
 
+import androidx.room.withTransaction
 import dev.panthu.sololife.data.db.DiaryDao
 import dev.panthu.sololife.data.db.DiaryEntry
+import dev.panthu.sololife.data.db.SoloLifeDatabase
 import kotlinx.coroutines.flow.Flow
 
-class DiaryRepository(private val dao: DiaryDao) {
+class DiaryRepository(private val db: SoloLifeDatabase) {
+    private val dao: DiaryDao = db.diaryDao()
 
     fun getAll(): Flow<List<DiaryEntry>> = dao.getAll()
 
@@ -21,8 +24,10 @@ class DiaryRepository(private val dao: DiaryDao) {
     suspend fun delete(entry: DiaryEntry) = dao.delete(entry)
 
     suspend fun replaceAll(entries: List<DiaryEntry>) {
-        dao.deleteAll()
-        dao.insertAll(entries)
+        db.withTransaction {
+            dao.deleteAll()
+            dao.insertAll(entries)
+        }
     }
 
     suspend fun mergeAll(entries: List<DiaryEntry>) = dao.insertAll(entries)

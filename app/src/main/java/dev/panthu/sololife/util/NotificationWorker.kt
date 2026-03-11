@@ -30,7 +30,7 @@ class NotificationWorker(ctx: Context, params: WorkerParameters) : CoroutineWork
         )
 
         val notification = NotificationCompat.Builder(applicationContext, SoloLifeApp.NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Time to journal \uD83D\uDCD4")
             .setContentText("Write about your day in SoloLife")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)

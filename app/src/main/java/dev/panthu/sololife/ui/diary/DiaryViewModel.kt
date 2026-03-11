@@ -46,16 +46,19 @@ class DiaryViewModel(app: Application) : AndroidViewModel(app) {
         return last.atTime(23, 59, 59).atZone(zone).toInstant().toEpochMilli()
     }
 
+    private val _allEntries = repo.getAll()
+        .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<DiaryListUiState> = combine(
         _query.flatMapLatest { q ->
-            if (q.isBlank()) repo.getAll() else repo.search(q)
+            if (q.isBlank()) _allEntries else repo.search(q)
         },
         _viewMode,
         run {
             repo.getEntryDatesInRange(currentMonthStart(), currentMonthEnd())
         },
-        repo.getAll()
+        _allEntries
     ) { filteredEntries, viewMode, monthDates, allEntries ->
         val entryDaySet = monthDates.map { DateUtils.dayStart(it) }.toSet()
         val streak = DateUtils.currentStreak(allEntries.map { it.date })

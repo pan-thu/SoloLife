@@ -12,8 +12,8 @@ import dev.panthu.sololife.data.repository.ExpenseRepository
 class SoloLifeApp : Application() {
 
     val database by lazy { SoloLifeDatabase.getInstance(this) }
-    val diaryRepository by lazy { DiaryRepository(database.diaryDao()) }
-    val expenseRepository by lazy { ExpenseRepository(database.expenseDao()) }
+    val diaryRepository by lazy { DiaryRepository(database) }
+    val expenseRepository by lazy { ExpenseRepository(database) }
     val appPreferences by lazy { AppPreferences(this) }
 
     override fun onCreate() {

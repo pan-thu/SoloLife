@@ -4,25 +4,24 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AccountBalanceWallet
-import androidx.compose.material.icons.rounded.AutoStories
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
@@ -54,7 +53,7 @@ private fun MainContent() {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        bottomBar = { AnimatedBottomNav(navController) },
+        bottomBar = { FloatingIslandNav(navController) },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
@@ -70,11 +69,11 @@ private data class NavItem(
 )
 
 @Composable
-private fun AnimatedBottomNav(navController: NavHostController) {
+private fun FloatingIslandNav(navController: NavHostController) {
     val navItems = listOf(
         NavItem(Screen.Home,     "Home",     Icons.Rounded.Home),
         NavItem(Screen.Diary,    "Journal",  Icons.Rounded.AutoStories),
-        NavItem(Screen.Expenses, "Expenses", Icons.Rounded.AccountBalanceWallet),
+        NavItem(Screen.Expenses, "Wallet",   Icons.Rounded.AccountBalanceWallet),
         NavItem(Screen.Settings, "Settings", Icons.Rounded.Tune)
     )
 
@@ -87,91 +86,158 @@ private fun AnimatedBottomNav(navController: NavHostController) {
     val showNav = currentDest?.route in topLevelRoutes
 
     val selectedIndex = navItems.indexOfFirst {
-        currentDest?.hierarchy?.any { dest -> dest.route == it.screen.route } == true
+        currentDest?.hierarchy?.any { d -> d.route == it.screen.route } == true
     }.takeIf { it >= 0 } ?: 0
 
     val view = LocalView.current
+    val primary = MaterialTheme.colorScheme.primary
+    val surface = MaterialTheme.colorScheme.surface
+    val outline = MaterialTheme.colorScheme.outline
 
-    if (showNav) {
-        Surface(
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 4.dp
+    AnimatedVisibility(
+        visible = showNav,
+        enter = fadeIn(tween(300)) + slideInVertically(tween(300)) { it },
+        exit = fadeOut(tween(200)) + slideOutVertically(tween(200)) { it }
+    ) {
+        // Floating island container — full width wrapper for nav bar padding
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            contentAlignment = Alignment.Center
         ) {
-            BoxWithConstraints(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .height(64.dp)
-            ) {
-                val itemWidth = maxWidth / navItems.size
-                val pillWidth = 56.dp
-                val pillHeight = 32.dp
-                val pillVerticalOffset = (64.dp - pillHeight) / 2
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val totalWidth = maxWidth
+                val itemWidth = totalWidth / navItems.size
+                val indicatorW = 44.dp
 
-                val pillOffset by animateDpAsState(
-                    targetValue = itemWidth * selectedIndex + (itemWidth - pillWidth) / 2,
-                    animationSpec = spring(dampingRatio = 0.7f, stiffness = 400f),
-                    label = "pill_offset"
+                // Animated indicator x offset
+                val indicatorX by animateDpAsState(
+                    targetValue = itemWidth * selectedIndex + (itemWidth - indicatorW) / 2,
+                    animationSpec = spring(dampingRatio = 0.65f, stiffness = 380f),
+                    label = "indicatorX"
                 )
 
-                // Sliding pill indicator
+                // ── Nav island surface ──────────────────────────────────────
                 Box(
                     modifier = Modifier
-                        .offset(x = pillOffset, y = pillVerticalOffset)
-                        .size(width = pillWidth, height = pillHeight)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                )
-
-                Row(modifier = Modifier.fillMaxSize()) {
-                    navItems.forEachIndexed { idx, item ->
-                        val selected = idx == selectedIndex
-                        val iconColor by animateColorAsState(
-                            targetValue = if (selected) MaterialTheme.colorScheme.primary
-                                          else MaterialTheme.colorScheme.onSurfaceVariant,
-                            label = "icon_color_$idx"
-                        )
-
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .clickable(
-                                    indication = null,
-                                    interactionSource = remember { MutableInteractionSource() }
-                                ) {
-                                    view.hapticTick()
-                                    navController.navigate(item.screen.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(2.dp)
-                            ) {
-                                Icon(
-                                    imageVector = item.icon,
-                                    contentDescription = item.label,
-                                    tint = iconColor,
-                                    modifier = Modifier.size(24.dp)
+                        .fillMaxWidth()
+                        .height(62.dp)
+                        .drawBehind {
+                            // Glow shadow under the bar — colored by primary
+                            drawCircle(
+                                brush = Brush.radialGradient(
+                                    listOf(primary.copy(alpha = 0.18f), Color.Transparent),
+                                    center = Offset(
+                                        size.width * (selectedIndex + 0.5f) / navItems.size,
+                                        size.height * 0.7f
+                                    ),
+                                    radius = size.width * 0.35f
+                                ),
+                                radius = size.width * 0.35f,
+                                center = Offset(
+                                    size.width * (selectedIndex + 0.5f) / navItems.size,
+                                    size.height * 0.7f
                                 )
-                                AnimatedVisibility(visible = selected) {
-                                    Text(
-                                        text = item.label,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(surface)
+                        .border(
+                            width = 1.dp,
+                            brush = Brush.linearGradient(
+                                listOf(
+                                    primary.copy(alpha = 0.28f),
+                                    outline.copy(alpha = 0.08f),
+                                    outline.copy(alpha = 0.05f)
+                                )
+                            ),
+                            shape = RoundedCornerShape(22.dp)
+                        )
+                ) {
+                    // Sliding luminous indicator pill
+                    Box(
+                        modifier = Modifier
+                            .offset(x = indicatorX, y = 9.dp)
+                            .size(width = indicatorW, height = 44.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(
+                                        primary.copy(alpha = 0.18f),
+                                        primary.copy(alpha = 0.08f)
+                                    )
+                                )
+                            )
+                    )
+
+                    // Icons row
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        navItems.forEachIndexed { idx, item ->
+                            val selected = idx == selectedIndex
+
+                            val iconScale by animateFloatAsState(
+                                targetValue = if (selected) 1.12f else 1f,
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessMedium
+                                ),
+                                label = "iconScale_$idx"
+                            )
+                            val iconColor by animateColorAsState(
+                                targetValue = if (selected) primary
+                                              else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                animationSpec = tween(200),
+                                label = "iconColor_$idx"
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight()
+                                    .clickable(
+                                        indication = null,
+                                        interactionSource = remember { MutableInteractionSource() }
+                                    ) {
+                                        view.hapticTick()
+                                        navController.navigate(item.screen.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = item.icon,
+                                        contentDescription = item.label,
+                                        tint = iconColor,
+                                        modifier = Modifier
+                                            .size(22.dp)
+                                            .scale(iconScale)
+                                    )
+
+                                    // Glowing dot for selected tab
+                                    Spacer(Modifier.height(4.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .size(if (selected) 4.dp else 0.dp)
+                                            .clip(CircleShape)
+                                            .background(primary)
                                     )
                                 }
                             }
                         }
                     }
                 }
+
             }
         }
     }

@@ -26,6 +26,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.panthu.sololife.data.db.Expense
 import dev.panthu.sololife.data.db.ExpenseCategory
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZoneOffset
 import dev.panthu.sololife.util.CategoryInfo
 import dev.panthu.sololife.util.DateUtils
 import dev.panthu.sololife.util.hapticConfirm
@@ -220,7 +223,11 @@ fun ExpenseFormSheet(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    pickerState.selectedDateMillis?.let { date = it }
+                    pickerState.selectedDateMillis?.let { utcMillis ->
+                        // DatePicker returns UTC midnight; convert to local midnight
+                        val localDate = Instant.ofEpochMilli(utcMillis).atZone(ZoneOffset.UTC).toLocalDate()
+                        date = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    }
                     showDatePicker = false
                 }) { Text("OK") }
             },

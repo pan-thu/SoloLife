@@ -18,7 +18,8 @@ data class DiaryListUiState(
     val isLoaded: Boolean = false,
     val viewMode: DiaryViewMode = DiaryViewMode.LIST,
     val calendarEntryDates: Set<Long> = emptySet(),
-    val currentStreak: Int = 0
+    val currentStreak: Int = 0,
+    val selectedDate: java.time.LocalDate? = null   // NEW
 )
 
 class DiaryViewModel(app: Application) : AndroidViewModel(app) {
@@ -28,6 +29,16 @@ class DiaryViewModel(app: Application) : AndroidViewModel(app) {
     val query: StateFlow<String> = _query.asStateFlow()
 
     private val _viewMode = MutableStateFlow(DiaryViewMode.LIST)
+
+    private val _selectedDate = MutableStateFlow<java.time.LocalDate?>(null)
+
+    fun setSelectedDate(date: java.time.LocalDate) {
+        _selectedDate.value = if (_selectedDate.value == date) null else date
+    }
+
+    fun clearDateFilter() {
+        _selectedDate.value = null
+    }
 
     fun toggleViewMode() {
         _viewMode.value = if (_viewMode.value == DiaryViewMode.LIST) DiaryViewMode.CALENDAR else DiaryViewMode.LIST
@@ -58,17 +69,24 @@ class DiaryViewModel(app: Application) : AndroidViewModel(app) {
         run {
             repo.getEntryDatesInRange(currentMonthStart(), currentMonthEnd())
         },
-        _allEntries
-    ) { filteredEntries, viewMode, monthDates, allEntries ->
+        _allEntries,
+        _selectedDate
+    ) { filteredEntries, viewMode, monthDates, allEntries, selectedDate ->
         val entryDaySet = monthDates.map { DateUtils.dayStart(it) }.toSet()
         val streak = DateUtils.currentStreak(allEntries.map { it.date })
+        val displayEntries = if (selectedDate == null) filteredEntries else {
+            val zone = java.time.ZoneId.systemDefault()
+            val dayMillis = selectedDate.atStartOfDay(zone).toInstant().toEpochMilli()
+            filteredEntries.filter { DateUtils.isSameDay(it.date, dayMillis) }
+        }
         DiaryListUiState(
-            entries = filteredEntries,
+            entries = displayEntries,
             query = _query.value,
             isLoaded = true,
             viewMode = viewMode,
             calendarEntryDates = entryDaySet,
-            currentStreak = streak
+            currentStreak = streak,
+            selectedDate = selectedDate
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DiaryListUiState())
 

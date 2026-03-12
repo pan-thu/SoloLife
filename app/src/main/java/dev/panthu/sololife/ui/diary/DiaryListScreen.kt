@@ -12,6 +12,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.FormatListBulleted
 import androidx.compose.material.icons.rounded.GridView
@@ -112,52 +114,78 @@ fun DiaryListScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            when {
-                !state.isLoaded -> {
-                    LazyColumn {
-                        items(5) { ShimmerDiaryCard() }
-                    }
-                }
-                state.viewMode == DiaryViewMode.CALENDAR -> {
-                    val zone = ZoneId.systemDefault()
-                    val monthStart = LocalDate.now(zone).withDayOfMonth(1)
-                        .atStartOfDay(zone).toInstant().toEpochMilli()
-                    LazyColumn {
-                        item {
-                            DiaryCalendarView(
-                                currentMonthStart = monthStart,
-                                entryDates = state.calendarEntryDates,
-                                onDayClick = { dayMillis ->
-                                    val entry = state.entries.firstOrNull {
-                                        DateUtils.isSameDay(it.date, dayMillis)
-                                    }
-                                    entry?.let { onOpenEntry(it.id) }
-                                }
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Date filter chip
+                val selectedDate = state.selectedDate
+                if (selectedDate != null) {
+                    val label = selectedDate.format(
+                        java.time.format.DateTimeFormatter.ofPattern("MMM d")
+                    )
+                    FilterChip(
+                        selected = true,
+                        onClick = { vm.clearDateFilter() },
+                        label = { Text(label) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Rounded.CalendarToday,
+                                contentDescription = null,
+                                modifier = Modifier.size(FilterChipDefaults.IconSize)
                             )
+                        },
+                        trailingIcon = {
+                            Icon(
+                                Icons.Rounded.Close,
+                                contentDescription = "Clear filter",
+                                modifier = Modifier.size(FilterChipDefaults.IconSize)
+                            )
+                        },
+                        modifier = Modifier.padding(start = 24.dp, top = 8.dp, bottom = 4.dp)
+                    )
+                }
+
+                when {
+                    !state.isLoaded -> {
+                        LazyColumn {
+                            items(5) { ShimmerDiaryCard() }
                         }
                     }
-                }
-                state.entries.isEmpty() -> {
-                    DiaryEmptyState()
-                }
-                else -> {
-                    val grouped = remember(state.entries) { state.entries.groupByMonth() }
-                    LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
-                        grouped.forEach { (monthKey, entries) ->
-                            item(key = "header_$monthKey") {
-                                PillMonthHeader(millis = monthKey)
+                    state.viewMode == DiaryViewMode.CALENDAR -> {
+                        val zone = ZoneId.systemDefault()
+                        val monthStart = LocalDate.now(zone).withDayOfMonth(1)
+                            .atStartOfDay(zone).toInstant().toEpochMilli()
+                        LazyColumn {
+                            item {
+                                DiaryCalendarView(
+                                    currentMonthStart = monthStart,
+                                    entryDates = state.calendarEntryDates,
+                                    selectedDate = state.selectedDate,
+                                    onDayClick = { date -> vm.setSelectedDate(date) }
+                                )
                             }
-                            itemsIndexed(entries, key = { _, e -> e.id }) { index, entry ->
-                                SwipeActionsContainer(
-                                    item = entry,
-                                    onDelete = { vm.delete(entry) },
-                                    onEdit = { onOpenEntry(it.id) }
-                                ) {
-                                    DiaryTimelineItem(
-                                        entry = entry,
-                                        isLast = index == entries.lastIndex,
-                                        onClick = { onOpenEntry(entry.id) }
-                                    )
+                        }
+                    }
+                    state.entries.isEmpty() -> {
+                        DiaryEmptyState()
+                    }
+                    else -> {
+                        val grouped = remember(state.entries) { state.entries.groupByMonth() }
+                        LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
+                            grouped.forEach { (monthKey, entries) ->
+                                item(key = "header_$monthKey") {
+                                    PillMonthHeader(millis = monthKey)
+                                }
+                                itemsIndexed(entries, key = { _, e -> e.id }) { index, entry ->
+                                    SwipeActionsContainer(
+                                        item = entry,
+                                        onDelete = { vm.delete(entry) },
+                                        onEdit = { onOpenEntry(it.id) }
+                                    ) {
+                                        DiaryTimelineItem(
+                                            entry = entry,
+                                            isLast = index == entries.lastIndex,
+                                            onClick = { onOpenEntry(entry.id) }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -270,7 +298,8 @@ private fun PillMonthHeader(millis: Long) {
 private fun DiaryCalendarView(
     currentMonthStart: Long,
     entryDates: Set<Long>,
-    onDayClick: (Long) -> Unit
+    selectedDate: LocalDate? = null,
+    onDayClick: (LocalDate) -> Unit
 ) {
     val zone = ZoneId.systemDefault()
     val monthDate = Instant.ofEpochMilli(currentMonthStart).atZone(zone).toLocalDate()
@@ -322,6 +351,7 @@ private fun DiaryCalendarView(
                 val dayMillis = dayDate.atStartOfDay(zone).toInstant().toEpochMilli()
                 val hasEntry = entryDates.contains(dayMillis)
                 val isToday = dayDate == LocalDate.now(zone)
+                val isSelected = selectedDate == dayDate
 
                 Box(
                     modifier = Modifier
@@ -329,11 +359,14 @@ private fun DiaryCalendarView(
                         .padding(2.dp)
                         .clip(CircleShape)
                         .background(
-                            if (isToday) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                            else Color.Transparent
+                            when {
+                                isSelected -> MaterialTheme.colorScheme.primary
+                                isToday    -> MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                else       -> Color.Transparent
+                            }
                         )
                         .then(
-                            if (hasEntry) Modifier.clickable { onDayClick(dayMillis) } else Modifier
+                            if (hasEntry) Modifier.clickable { onDayClick(dayDate) } else Modifier
                         ),
                     contentAlignment = Alignment.Center
                 ) {
@@ -341,8 +374,11 @@ private fun DiaryCalendarView(
                         Text(
                             text = dayNum.toString(),
                             style = MaterialTheme.typography.labelMedium,
-                            color = if (isToday) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.onSurface
+                            color = when {
+                                isSelected -> MaterialTheme.colorScheme.onPrimary
+                                isToday    -> MaterialTheme.colorScheme.primary
+                                else       -> MaterialTheme.colorScheme.onSurface
+                            }
                         )
                         if (hasEntry) {
                             Spacer(Modifier.height(2.dp))

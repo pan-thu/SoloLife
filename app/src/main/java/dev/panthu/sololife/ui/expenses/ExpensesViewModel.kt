@@ -144,9 +144,11 @@ class ExpensesViewModel(app: Application) : AndroidViewModel(app) {
                 val weekExpenses = allExpenses.filter {
                     it.date.toLocalDate() in week.start..week.end
                 }
+                val byDay: Map<LocalDate, List<Expense>> =
+                    weekExpenses.groupBy { it.date.toLocalDate() }
                 val dailyTotals = List(7) { dayIdx ->
                     val targetDay = week.start.plusDays(dayIdx.toLong())
-                    weekExpenses.filter { it.date.toLocalDate() == targetDay }.sumOf { it.amount }
+                    byDay[targetDay]?.sumOf { it.amount } ?: 0.0
                 }
                 WeekSummary(filter = week, total = weekExpenses.sumOf { it.amount }, dailyTotals = dailyTotals)
             }

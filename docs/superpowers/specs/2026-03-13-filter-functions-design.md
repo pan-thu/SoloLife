@@ -21,15 +21,14 @@ Let users tap a date on the existing calendar view to filter the list to that da
 The calendar always shows the current month. Filtering to past-month dates is **intentionally out of scope** — no month navigation is added.
 
 ### `DiaryCalendarView` Signature Change
-The existing `onDayClick: (Long) -> Unit` parameter **changes type to `(LocalDate) -> Unit`**. Update all call sites: the single call in `DiaryListScreen` currently passes a `Long` (day-start millis); change it to pass the `LocalDate` directly. Add a new optional parameter:
+**`currentMonthStart: Long` stays unchanged** — `DateUtils.formatMonth` and the internal `Instant.ofEpochMilli` call both depend on it. Only `onDayClick` changes type: `(Long) → (LocalDate)`. Update the single call site in `DiaryListScreen` accordingly (currently passes day-start millis; change to pass the `LocalDate` computed inside the calendar). Add a new optional parameter:
 ```kotlin
 @Composable
 fun DiaryCalendarView(
-    currentMonthStart: LocalDate,
+    currentMonthStart: Long,              // unchanged
     entryDates: Set<Long>,
     selectedDate: LocalDate? = null,      // NEW
     onDayClick: (LocalDate) -> Unit,      // type changed: Long → LocalDate
-    ...
 )
 ```
 - When `selectedDate` is non-null and falls in the visible month, that day cell renders a filled accent-coloured circle behind the day number.
@@ -66,7 +65,7 @@ fun DiaryCalendarView(
   - `private val _selectedDate = MutableStateFlow<LocalDate?>(null)`.
   - `setSelectedDate(date: LocalDate)` — toggles off if same date, otherwise sets.
   - `clearDateFilter()` — sets `_selectedDate` to `null`.
-- The existing `combine` takes 4 flows; adding `_selectedDate` as the 5th uses the **5-argument overload** (available in kotlinx-coroutines ≥ 1.6.0; the project's Coroutines version should be verified before implementation — if below 1.6.0, upgrade or nest combines):
+- The existing `combine` takes 4 flows; adding `_selectedDate` as the 5th uses the **5-argument overload**. The project pulls coroutines transitively via Room 2.7.0 and lifecycle-viewmodel-compose 2.9.0, both of which require kotlinx-coroutines ≥ 1.7.x. The 5-arg overload is available ≥ 1.6.0, so no version issue. `java.time` APIs used throughout this spec are native on minSdk 35 — no desugaring required.
   1. `_query.flatMapLatest { ... }` → `filteredEntries`
   2. `_viewMode` → `viewMode`
   3. `repo.getEntryDatesInRange(...)` → `monthDates`
@@ -131,7 +130,7 @@ data class WeekSummary(
 | `Month` | Sum of expenses in selected month | Yes, in month chip |
 | `Week` | Sum of expenses in `start..end` | Yes, in week chip |
 
-**`displayTotal` is intentionally category-unfiltered** — it reflects total period spending regardless of active category chip. The total in the breadcrumb may not equal the sum of visible rows when both filters are active. This is by design.
+**`displayTotal` is intentionally category-unfiltered** — it reflects total period spending regardless of active category chip. The total in the breadcrumb may not equal the sum of visible rows when both filters are active. This is by design. The existing `DayHeader` per-day subtotals continue to be derived from the category-filtered list, so they reflect visible rows. The breadcrumb total and day-level totals intentionally use different bases.
 
 `allExpenses` continues to hold the full unfiltered dataset (for `CategoryBreakdownBar`, which always shows proportions across all time).
 

@@ -41,6 +41,13 @@ import java.time.format.TextStyle
 import java.util.Calendar
 import java.util.Locale
 
+// Depth extension for ExpenseDateFilter navigation
+private fun ExpenseDateFilter.depth() = when (this) {
+    is ExpenseDateFilter.None -> 0
+    is ExpenseDateFilter.Month -> 1
+    is ExpenseDateFilter.Week -> 2
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
@@ -96,20 +103,12 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
             }
 
             // Animated drill-down content
-            val prevDepthRef = remember { intArrayOf(0) }
-            val currentDepth = when (state.dateFilter) {
-                is ExpenseDateFilter.None -> 0
-                is ExpenseDateFilter.Month -> 1
-                is ExpenseDateFilter.Week -> 2
-            }
-            val goingDeeper = currentDepth > prevDepthRef[0]
-            SideEffect { prevDepthRef[0] = currentDepth }
-
             AnimatedContent(
                 targetState = state.dateFilter,
                 transitionSpec = {
-                    slideInHorizontally { if (goingDeeper) it else -it } togetherWith
-                    slideOutHorizontally { if (goingDeeper) -it else it }
+                    val deeper = targetState.depth() > initialState.depth()
+                    slideInHorizontally { if (deeper) it else -it } togetherWith
+                    slideOutHorizontally { if (deeper) -it else it }
                 },
                 modifier = Modifier.weight(1f)
             ) { filter ->
@@ -193,8 +192,9 @@ private fun BreadcrumbStrip(
 ) {
     when (dateFilter) {
         is ExpenseDateFilter.None -> {
-            val currentYear = LocalDate.now().year
-            val currentMonth = LocalDate.now().monthValue
+            val today = remember { LocalDate.now() }
+            val currentYear = today.year
+            val currentMonth = today.monthValue
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -334,7 +334,7 @@ private fun WeekCard(
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                 verticalAlignment = Alignment.Bottom
             ) {
-                summary.dailyTotals.forEach { dayTotal ->
+                summary.dailyTotals.take(7).forEach { dayTotal ->
                     val fraction = if (maxDaily > 0.0) (dayTotal / maxDaily).toFloat().coerceIn(0f, 1f) else 0f
                     val barHeight = if (fraction == 0f) 1.dp else (fraction * 24).dp
                     Box(

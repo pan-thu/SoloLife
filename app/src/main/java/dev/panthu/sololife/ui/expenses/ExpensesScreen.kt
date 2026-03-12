@@ -1,13 +1,20 @@
 package dev.panthu.sololife.ui.expenses
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,7 +34,12 @@ import dev.panthu.sololife.util.DateUtils
 import dev.panthu.sololife.util.hapticConfirm
 import dev.panthu.sololife.util.info
 import dev.panthu.sololife.util.toExpenseCategory
+import java.time.LocalDate
+import java.time.Month
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
 import java.util.Calendar
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,10 +74,18 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Week summary header
-            WeekSummaryCard(weekTotal = state.displayTotal)
+            // Breadcrumb / month scroller
+            BreadcrumbStrip(
+                dateFilter = state.dateFilter,
+                displayTotal = state.displayTotal,
+                onMonthSelected = { year, month ->
+                    vm.setDateFilter(ExpenseDateFilter.Month(year, month))
+                },
+                onClearToNone = { vm.clearDateFilter() },
+                onClearToMonth = { vm.setDateFilter(it) }
+            )
 
-            // Category breakdown bar (shown when there are expenses)
+            // Category breakdown bar (always shows full-dataset proportions)
             if (state.allExpenses.isNotEmpty()) {
                 CategoryBreakdownBar(
                     allExpenses = state.allExpenses,
@@ -75,28 +95,61 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
                 Spacer(Modifier.height(8.dp))
             }
 
-            if (!state.isLoaded) {
-                repeat(5) { ShimmerExpenseCard() }
-            } else if (state.expenses.isEmpty()) {
-                ExpensesEmptyState()
-            } else {
-                val grouped = remember(state.expenses) { state.expenses.groupByDay() }
+            // Animated drill-down content
+            val prevDepthRef = remember { intArrayOf(0) }
+            val currentDepth = when (state.dateFilter) {
+                is ExpenseDateFilter.None -> 0
+                is ExpenseDateFilter.Month -> 1
+                is ExpenseDateFilter.Week -> 2
+            }
+            val goingDeeper = currentDepth > prevDepthRef[0]
+            SideEffect { prevDepthRef[0] = currentDepth }
 
-                LazyColumn(
-                    contentPadding = PaddingValues(bottom = 100.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    grouped.forEach { (dayKey, dayExpenses) ->
-                        item(key = "day_$dayKey") {
-                            DayHeader(millis = dayKey, expenses = dayExpenses)
+            AnimatedContent(
+                targetState = state.dateFilter,
+                transitionSpec = {
+                    slideInHorizontally { if (goingDeeper) it else -it } togetherWith
+                    slideOutHorizontally { if (goingDeeper) -it else it }
+                },
+                modifier = Modifier.weight(1f)
+            ) { filter ->
+                when {
+                    !state.isLoaded -> {
+                        Column { repeat(5) { ShimmerExpenseCard() } }
+                    }
+                    filter is ExpenseDateFilter.Month -> {
+                        // Level 1: always show week cards (weeksForMonth always returns 4-6 entries)
+                        LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
+                            items(state.weekSummaries) { summary ->
+                                WeekCard(
+                                    summary = summary,
+                                    onClick = { vm.setDateFilter(summary.filter) }
+                                )
+                            }
                         }
-                        items(dayExpenses, key = { it.id }) { expense ->
-                            SwipeActionsContainer(
-                                item = expense,
-                                onDelete = { vm.delete(expense) },
-                                onEdit = { showSheet = false; vm.setEditingExpense(it) }
-                            ) {
-                                ExpenseRow(expense = expense)
+                    }
+                    state.expenses.isEmpty() -> {
+                        ExpensesEmptyState()
+                    }
+                    else -> {
+                        val grouped = remember(state.expenses) { state.expenses.groupByDay() }
+                        LazyColumn(
+                            contentPadding = PaddingValues(bottom = 100.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            grouped.forEach { (dayKey, dayExpenses) ->
+                                item(key = "day_$dayKey") {
+                                    DayHeader(millis = dayKey, expenses = dayExpenses)
+                                }
+                                items(dayExpenses, key = { it.id }) { expense ->
+                                    SwipeActionsContainer(
+                                        item = expense,
+                                        onDelete = { vm.delete(expense) },
+                                        onEdit = { showSheet = false; vm.setEditingExpense(it) }
+                                    ) {
+                                        ExpenseRow(expense = expense)
+                                    }
+                                }
                             }
                         }
                     }
@@ -129,40 +182,170 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun WeekSummaryCard(weekTotal: Double) {
+private fun BreadcrumbStrip(
+    dateFilter: ExpenseDateFilter,
+    displayTotal: Double,
+    onMonthSelected: (year: Int, month: Int) -> Unit,
+    onClearToNone: () -> Unit,
+    onClearToMonth: (ExpenseDateFilter.Month) -> Unit
+) {
+    when (dateFilter) {
+        is ExpenseDateFilter.None -> {
+            val currentYear = LocalDate.now().year
+            val currentMonth = LocalDate.now().monthValue
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(12) { idx ->
+                    val monthNum = idx + 1
+                    val monthName = Month.of(monthNum)
+                        .getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                    FilterChip(
+                        selected = monthNum == currentMonth,
+                        onClick = { onMonthSelected(currentYear, monthNum) },
+                        label = { Text(monthName) }
+                    )
+                }
+            }
+        }
+        is ExpenseDateFilter.Month -> {
+            val monthName = Month.of(dateFilter.month)
+                .getDisplayName(TextStyle.FULL, Locale.getDefault())
+            val totalFormatted = "฿${String.format("%,.0f", displayTotal)}"
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FilterChip(
+                    selected = false,
+                    onClick = onClearToNone,
+                    label = { Text("← All") }
+                )
+                FilterChip(
+                    selected = true,
+                    onClick = onClearToNone,   // tapping active Month chip also clears to None
+                    label = { Text("$monthName · $totalFormatted") },
+                    trailingIcon = {
+                        Icon(
+                            Icons.Rounded.Close,
+                            contentDescription = "Clear",
+                            modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        )
+                    }
+                )
+            }
+        }
+        is ExpenseDateFilter.Week -> {
+            val parentMonth = ExpenseDateFilter.Month(dateFilter.year, dateFilter.month)
+            val monthName = Month.of(dateFilter.month)
+                .getDisplayName(TextStyle.SHORT, Locale.getDefault())
+            val monthStart = LocalDate.of(dateFilter.year, dateFilter.month, 1)
+            val monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth())
+            val displayStart = maxOf(dateFilter.start, monthStart)
+            val displayEnd = minOf(dateFilter.end, monthEnd)
+            val fmt = DateTimeFormatter.ofPattern("MMM d")
+            val rangeLabel = "${displayStart.format(fmt)}–${displayEnd.format(DateTimeFormatter.ofPattern("d"))}"
+            val totalFormatted = "฿${String.format("%,.0f", displayTotal)}"
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FilterChip(
+                    selected = false,
+                    onClick = { onClearToMonth(parentMonth) },
+                    label = { Text("← $monthName ${dateFilter.year}") }
+                )
+                FilterChip(
+                    selected = true,
+                    onClick = { onClearToMonth(parentMonth) },  // tapping active Week chip → back to Month
+                    label = { Text("Wk ${dateFilter.weekIndex + 1}: $rangeLabel · $totalFormatted") },
+                    trailingIcon = {
+                        Icon(
+                            Icons.Rounded.Close,
+                            contentDescription = "Clear",
+                            modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        )
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeekCard(
+    summary: WeekSummary,
+    onClick: () -> Unit
+) {
+    val week = summary.filter
+    // Clamp display dates to month boundaries
+    val monthStart = LocalDate.of(week.year, week.month, 1)
+    val monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth())
+    val displayStart = maxOf(week.start, monthStart)
+    val displayEnd = minOf(week.end, monthEnd)
+    val fmt = DateTimeFormatter.ofPattern("MMM d")
+    val totalFormatted = "฿${String.format("%,.0f", summary.total)}"
+    val maxDaily = summary.dailyTotals.maxOrNull() ?: 0.0
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .clickable(onClick = onClick),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 2.dp,
-        shape = RoundedCornerShape(20.dp)
+        tonalElevation = 1.dp,
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+                .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
                 Text(
-                    "This Week",
+                    "Wk ${week.weekIndex + 1}  ·  ${displayStart.format(fmt)}–${displayEnd.format(DateTimeFormatter.ofPattern("d"))}",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(4.dp))
-                AmountText(
-                    amount = weekTotal,
-                    style = MaterialTheme.typography.displaySmall
+                Text(
+                    totalFormatted,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
-            Text(
-                text = "${DateUtils.formatShort(DateUtils.weekStart())} – ${DateUtils.formatShort(DateUtils.weekEnd())}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+
+            // Proportional daily bar (Mon–Sun)
+            Row(
+                modifier = Modifier
+                    .height(24.dp)
+                    .width(56.dp),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                summary.dailyTotals.forEach { dayTotal ->
+                    val fraction = if (maxDaily > 0.0) (dayTotal / maxDaily).toFloat().coerceIn(0f, 1f) else 0f
+                    val barHeight = if (fraction == 0f) 1.dp else (fraction * 24).dp
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(barHeight)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.6f))
+                    )
+                }
+            }
         }
     }
 }

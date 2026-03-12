@@ -63,7 +63,7 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
                 .padding(padding)
         ) {
             // Week summary header
-            WeekSummaryCard(weekTotal = state.weekTotal)
+            WeekSummaryCard(weekTotal = state.displayTotal)
 
             // Category breakdown bar (shown when there are expenses)
             if (state.allExpenses.isNotEmpty()) {

@@ -31,7 +31,7 @@ Replace the current `DiaryDetailScreen` (single `RichTextEditor` + bottom image 
 
 ## Data Model
 
-### `Block` (new file: `data/db/Block.kt`)
+### `Block` (new file: `data/model/Block.kt`)
 
 ```kotlin
 @Serializable
@@ -82,8 +82,12 @@ DB version bumps from 2 → 3.
 suspend fun getEntryAsBlocks(id: Long): Pair<String, List<Block>>
 
 // Serialize blocks to JSON, derive content + imageUris for search/compat, persist
-fun saveBlocks(id: Long?, title: String, blocks: List<Block>, date: Long)
+suspend fun saveBlocks(id: Long?, title: String, blocks: List<Block>, date: Long)
 ```
+
+Both functions are `suspend` — they perform Room I/O and must be called from a coroutine scope (e.g. `scope.launch { vm.saveBlocks(...) }`).
+
+`saveBlocks` derives `content` by concatenating the HTML of **all** `Text` blocks in order (joined with a newline), so search covers the full entry even when the first block is an image or checklist. It derives `imageUris` by collecting all `paths` from every `Image` block in order, pipe-joined.
 
 The existing `save(id, title, content, date, imageUris)` is retained internally but no longer called from the UI directly.
 
@@ -94,9 +98,14 @@ var blocks by remember { mutableStateOf<List<Block>>(emptyList()) }
 val richTextStates = remember { mutableStateMapOf<String, RichTextState>() }
 var focusedBlockId by remember { mutableStateOf<String?>(null) }
 var showInsertMenuForBlockId by remember { mutableStateOf<String?>(null) }
+var pendingDeletePaths by remember { mutableStateOf<List<String>>(emptyList()) }
 ```
 
 Each `Text` block owns one `RichTextState` keyed by block ID. On save, each state's `.toHtml()` is written back into the block before calling `saveBlocks()`.
+
+**`richTextStates` lifecycle:** when a `Text` block is deleted from `blocks`, its entry must also be removed from `richTextStates` (`richTextStates.remove(block.id)`) to prevent memory leaks over long editing sessions.
+
+**Image delete staging:** when an image block is deleted (or individual paths removed), the paths are added to `pendingDeletePaths` — not deleted from disk immediately. After `saveBlocks()` completes successfully, each path in `pendingDeletePaths` is deleted via the existing `deleteImage()` util. This matches the existing pattern in `DiaryDetailScreen` and prevents data loss if the save fails.
 
 ---
 
@@ -107,6 +116,8 @@ Each `Text` block owns one `RichTextState` keyed by block ID. On save, each stat
 A `Canvas` composable that fills its parent and draws:
 - Horizontal blue lines every **28dp** (`Color(0xFFB8D4E8)`, alpha 0.35)
 - One vertical red line at **40dp** from the left edge (`Color(0xFFFFB3B3)`, alpha 0.4)
+
+The first line is drawn at **y = 28dp** (one line-height from the top). The `LazyColumn` content must use a matching **top padding of 28dp** so that block text baselines sit on the ruled lines rather than between them.
 
 Drawn behind all block content via `Box` layering.
 
@@ -157,14 +168,19 @@ Content left padding is **48dp** (right of the margin line). The `+` button is p
 - Shows: **B** / *I* / U̲ / bullet list toggle
 - Visibility: shown when `focusedBlockId != null` and the `RichTextState` has a non-collapsed selection
 - Dismissed on tap-outside or selection collapse
+- The existing `FormattingToolbar` bottom bar from `DiaryDetailScreen` is **not carried over**. The bubble is the sole formatting UI in the new editor. The `Scaffold.bottomBar` slot is unused (no bottom toolbar).
 
 **`BlockInsertMenu.kt`** (`ui/diary/blocks/BlockInsertMenu.kt`)
 - `ModalBottomSheet`
 - 2×2 grid of tiles: **Text** (📝) / **Image** (🖼️) / **Divider** (➖) / **Checklist** (☑️)
 - Tapping a tile inserts the new block immediately after the block whose `+` button was tapped
-- Image tile launches `ActivityResultContracts.GetMultipleContents("image/*")` — selected images saved via existing `saveImage()` util, then wrapped in an `ImageBlock`
+- Image tile launches `ActivityResultContracts.GetMultipleContents("image/*")` — all selected images are saved via the existing `saveImage()` util and bundled into a **single** `Image` block (one `Image` block per picker session, with `paths` containing all selected files). This is consistent with the auto-grid rendering model.
 
 ---
+
+## Empty-Entry Guard
+
+On save (back button or checkmark), if `title` is blank **and** `blocks` is either empty or contains only a single `Text` block whose `RichTextState` text is blank → call `onBack()` without saving (matching the existing `DiaryDetailScreen` behaviour). This prevents ghost entries from appearing in the list.
 
 ## Block Insertion Flow
 
@@ -204,7 +220,7 @@ This is a one-time, transparent, per-entry migration triggered on first open.
 
 | Action | File |
 |--------|------|
-| Create | `data/db/Block.kt` |
+| Create | `data/model/Block.kt` |
 | Create | `ui/diary/BlockEditorScreen.kt` |
 | Create | `ui/diary/NotePageBackground.kt` |
 | Create | `ui/diary/blocks/TextBlock.kt` |

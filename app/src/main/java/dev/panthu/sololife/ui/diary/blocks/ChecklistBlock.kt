@@ -22,6 +22,11 @@ fun ChecklistBlock(
     onItemsChanged: (List<CheckItem>) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    if (items.isEmpty()) {
+        LaunchedEffect(Unit) {
+            onItemsChanged(listOf(CheckItem(id = UUID.randomUUID().toString(), text = "", checked = false)))
+        }
+    }
     Column(modifier = modifier) {
         items.forEachIndexed { index, item ->
             Row(
@@ -59,11 +64,6 @@ fun ChecklistBlock(
                         .weight(1f)
                         .padding(end = 8.dp)
                 )
-            }
-        }
-        if (items.isEmpty()) {
-            LaunchedEffect(Unit) {
-                onItemsChanged(listOf(CheckItem(id = UUID.randomUUID().toString(), text = "", checked = false)))
             }
         }
     }

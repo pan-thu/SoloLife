@@ -3,9 +3,6 @@ package dev.panthu.sololife.ui.diary.blocks
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
@@ -61,28 +58,36 @@ fun ImageBlock(
                 )
         )
     } else {
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier = modifier
-                .fillMaxWidth()
-                .heightIn(max = 400.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            userScrollEnabled = false
+        val chunked = paths.chunked(2)
+        Column(
+            modifier = modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            items(paths) { path ->
-                AsyncImage(
-                    model = pathToUri(context, path),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .aspectRatio(1f)
-                        .clip(shape)
-                        .combinedClickable(
-                            onClick = {},
-                            onLongClick = { showDeleteDialog = true }
+            chunked.forEach { rowPaths ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    rowPaths.forEach { path ->
+                        AsyncImage(
+                            model = pathToUri(context, path),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .weight(1f)
+                                .aspectRatio(1f)
+                                .clip(shape)
+                                .combinedClickable(
+                                    onClick = {},
+                                    onLongClick = { showDeleteDialog = true }
+                                )
                         )
-                )
+                    }
+                    // Pad last row if odd number of images
+                    if (rowPaths.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
             }
         }
     }

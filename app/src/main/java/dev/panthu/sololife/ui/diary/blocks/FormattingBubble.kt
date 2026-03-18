@@ -13,8 +13,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import com.mohamedrejeb.richeditor.model.RichTextState
 
 @Composable
@@ -29,33 +27,27 @@ fun FormattingBubble(
         ?.contains(TextDecoration.Underline) == true
     val isBullet = state.isUnorderedList
 
-    Popup(
-        alignment = Alignment.TopStart,
-        onDismissRequest = onDismiss,
-        properties = PopupProperties(focusable = false)
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.inverseSurface,
+        tonalElevation = 4.dp,
+        modifier = modifier
     ) {
-        Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = MaterialTheme.colorScheme.inverseSurface,
-            tonalElevation = 4.dp,
-            modifier = modifier
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 4.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 4.dp)
-            ) {
-                BubbleButton(icon = Icons.Rounded.FormatBold, active = isBold, contentDescription = "Bold") {
-                    state.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold))
-                }
-                BubbleButton(icon = Icons.Rounded.FormatItalic, active = isItalic, contentDescription = "Italic") {
-                    state.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic))
-                }
-                BubbleButton(icon = Icons.Rounded.FormatUnderlined, active = isUnderline, contentDescription = "Underline") {
-                    state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.Underline))
-                }
-                BubbleButton(icon = Icons.Rounded.FormatListBulleted, active = isBullet, contentDescription = "Bullet list") {
-                    state.toggleUnorderedList()
-                }
+            BubbleButton(icon = Icons.Rounded.FormatBold, active = isBold, contentDescription = "Bold") {
+                state.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold))
+            }
+            BubbleButton(icon = Icons.Rounded.FormatItalic, active = isItalic, contentDescription = "Italic") {
+                state.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic))
+            }
+            BubbleButton(icon = Icons.Rounded.FormatUnderlined, active = isUnderline, contentDescription = "Underline") {
+                state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.Underline))
+            }
+            BubbleButton(icon = Icons.Rounded.FormatListBulleted, active = isBullet, contentDescription = "Bullet list") {
+                state.toggleUnorderedList()
             }
         }
     }

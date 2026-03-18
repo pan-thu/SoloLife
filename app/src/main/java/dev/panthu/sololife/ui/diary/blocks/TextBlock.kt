@@ -9,9 +9,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.googlefonts.Font
+import androidx.compose.ui.text.googlefonts.GoogleFont
 import com.mohamedrejeb.richeditor.model.RichTextState
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditorDefaults
+import dev.panthu.sololife.R
+
+internal val provider = GoogleFont.Provider(
+    providerAuthority = "com.google.android.gms.fonts",
+    providerPackage = "com.google.android.gms",
+    certificates = R.array.com_google_android_gms_fonts_certs
+)
+
+internal val CaveatFontFamily = FontFamily(
+    Font(googleFont = GoogleFont("Caveat"), fontProvider = provider)
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,12 +40,12 @@ fun TextBlock(
             fontSize = MaterialTheme.typography.bodyLarge.fontSize,
             color = MaterialTheme.colorScheme.onBackground,
             lineHeight = MaterialTheme.typography.bodyLarge.lineHeight,
-            fontFamily = FontFamily.Cursive
+            fontFamily = CaveatFontFamily
         ),
         placeholder = {
             Text(
                 text = "Start writing...",
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyLarge.copy(fontFamily = CaveatFontFamily),
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
             )
         },

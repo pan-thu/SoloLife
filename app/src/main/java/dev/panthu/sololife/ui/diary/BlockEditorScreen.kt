@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -20,7 +21,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -50,7 +50,7 @@ fun BlockEditorScreen(
     var title by remember { mutableStateOf("") }
     var blocks by remember { mutableStateOf<List<Block>>(emptyList()) }
     val richTextStates = remember { mutableStateMapOf<String, RichTextState>() }
-    var focusedBlockId by remember { mutableStateOf<String?>(null) }
+    var selectedBlockId by remember { mutableStateOf<String?>(null) }
     var showInsertMenu by remember { mutableStateOf(false) }
     var pendingDeletePaths by remember { mutableStateOf<List<String>>(emptyList()) }
     var date by remember { mutableStateOf(System.currentTimeMillis()) }
@@ -148,7 +148,7 @@ fun BlockEditorScreen(
 
     fun insertBlock(type: InsertBlockType) {
         showInsertMenu = false
-        val afterBlockId = focusedBlockId?.takeIf { id -> blocks.any { it.id == id } }
+        val afterBlockId = selectedBlockId?.takeIf { id -> blocks.any { it.id == id } }
         when (type) {
             InsertBlockType.TEXT -> {
                 val newId = UUID.randomUUID().toString()
@@ -158,7 +158,7 @@ fun BlockEditorScreen(
                     val idx = if (afterBlockId != null) list.indexOfFirst { it.id == afterBlockId } else -1
                     list.add(if (idx >= 0) idx + 1 else list.size, newBlock)
                 }
-                focusedBlockId = newId
+                selectedBlockId = newId
             }
             InsertBlockType.IMAGE -> {
                 if (pendingImageInsertAfterBlockId == null) {
@@ -265,6 +265,10 @@ fun BlockEditorScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { selectedBlockId = null }
         ) {
             NotePageBackground(modifier = Modifier.fillMaxSize())
 
@@ -287,7 +291,7 @@ fun BlockEditorScreen(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground,
                             lineHeight = MaterialTheme.typography.headlineLarge.lineHeight,
-                            fontFamily = FontFamily.Cursive
+                            fontFamily = CaveatFontFamily
                         ),
                         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                         decorationBox = { inner ->
@@ -318,8 +322,9 @@ fun BlockEditorScreen(
                     BlockRow(
                         block = block,
                         richTextStates = richTextStates,
-                        focusedBlockId = focusedBlockId,
-                        onFocusChange = { id, focused -> if (focused) focusedBlockId = id },
+                        isSelected = selectedBlockId == block.id,
+                        onSelect = { selectedBlockId = block.id },
+                        onFocusChange = { id, focused -> if (focused) selectedBlockId = id },
                         onDeleteImageBlock = { paths ->
                             pendingDeletePaths = pendingDeletePaths + paths
                             blocks = blocks.filter { it.id != block.id }
@@ -345,12 +350,13 @@ fun BlockEditorScreen(
                 }
             }
 
-            // Formatting bubble — shown whenever a text block is focused
-            val focusedState = focusedBlockId?.let { richTextStates[it] }
+            // Formatting bubble — shown when a text block is selected
+            val selectedBlock = blocks.find { it.id == selectedBlockId }
+            val focusedState = if (selectedBlock is Block.Text) richTextStates[selectedBlockId] else null
             if (focusedState != null) {
                 FormattingBubble(
                     state = focusedState,
-                    onDismiss = { focusedBlockId = null },
+                    onDismiss = { selectedBlockId = null },
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 16.dp)
@@ -394,7 +400,8 @@ fun BlockEditorScreen(
 private fun BlockRow(
     block: Block,
     richTextStates: Map<String, RichTextState>,
-    focusedBlockId: String?,
+    isSelected: Boolean,
+    onSelect: () -> Unit,
     onFocusChange: (String, Boolean) -> Unit,
     onDeleteImageBlock: (List<String>) -> Unit,
     onDeleteBlock: () -> Unit,
@@ -406,11 +413,11 @@ private fun BlockRow(
 ) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         // Block content
-        Box(modifier = Modifier.weight(1f)) {
-            when (block) {
-                is Block.Text -> {
-                    val state = richTextStates[block.id]
-                    if (state != null) {
+        when (block) {
+            is Block.Text -> {
+                val state = richTextStates[block.id]
+                if (state != null) {
+                    Box(modifier = Modifier.weight(1f)) {
                         TextBlock(
                             state = state,
                             modifier = Modifier.fillMaxWidth(),
@@ -418,7 +425,16 @@ private fun BlockRow(
                         )
                     }
                 }
-                is Block.Image -> {
+            }
+            is Block.Image -> {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { onSelect() }
+                ) {
                     ImageBlock(
                         paths = block.paths,
                         onDeleteBlock = { onDeleteImageBlock(block.paths) },
@@ -427,10 +443,28 @@ private fun BlockRow(
                             .padding(vertical = 8.dp)
                     )
                 }
-                is Block.Divider -> {
+            }
+            is Block.Divider -> {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { onSelect() }
+                ) {
                     DividerBlock(modifier = Modifier.fillMaxWidth())
                 }
-                is Block.Checklist -> {
+            }
+            is Block.Checklist -> {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { onSelect() }
+                ) {
                     ChecklistBlock(
                         items = block.items,
                         onItemsChanged = onChecklistChanged,
@@ -441,44 +475,46 @@ private fun BlockRow(
                 }
             }
         }
-        // Reorder column on the right
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            IconButton(
-                onClick = onMoveUp,
-                enabled = !isFirst,
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    Icons.Rounded.KeyboardArrowUp,
-                    contentDescription = "Move block up",
-                    modifier = Modifier.size(18.dp),
-                    tint = if (!isFirst) MaterialTheme.colorScheme.onSurfaceVariant
-                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                )
-            }
-            IconButton(
-                onClick = onMoveDown,
-                enabled = !isLast,
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    Icons.Rounded.KeyboardArrowDown,
-                    contentDescription = "Move block down",
-                    modifier = Modifier.size(18.dp),
-                    tint = if (!isLast) MaterialTheme.colorScheme.onSurfaceVariant
-                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                )
-            }
-            IconButton(
-                onClick = onDeleteBlock,
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    Icons.Rounded.Delete,
-                    contentDescription = "Delete block",
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
-                )
+        // Reorder + delete column — only shown when this block is selected
+        if (isSelected) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                IconButton(
+                    onClick = onMoveUp,
+                    enabled = !isFirst,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Rounded.KeyboardArrowUp,
+                        contentDescription = "Move block up",
+                        modifier = Modifier.size(18.dp),
+                        tint = if (!isFirst) MaterialTheme.colorScheme.onSurfaceVariant
+                               else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                    )
+                }
+                IconButton(
+                    onClick = onMoveDown,
+                    enabled = !isLast,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Rounded.KeyboardArrowDown,
+                        contentDescription = "Move block down",
+                        modifier = Modifier.size(18.dp),
+                        tint = if (!isLast) MaterialTheme.colorScheme.onSurfaceVariant
+                               else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                    )
+                }
+                IconButton(
+                    onClick = onDeleteBlock,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Rounded.Delete,
+                        contentDescription = "Delete block",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                    )
+                }
             }
         }
     }

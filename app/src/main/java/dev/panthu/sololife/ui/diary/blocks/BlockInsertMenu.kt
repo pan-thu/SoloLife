@@ -39,7 +39,7 @@ fun BlockInsertMenu(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             BlockTile(icon = Icons.Rounded.Notes, label = "Text", subtitle = "Paragraph",
-                color = MaterialTheme.colorScheme.secondaryContainer,
+                color = MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.weight(1f)) { onInsert(InsertBlockType.TEXT) }
             BlockTile(icon = Icons.Rounded.Image, label = "Image", subtitle = "From gallery",
                 color = MaterialTheme.colorScheme.primaryContainer,
@@ -51,10 +51,10 @@ fun BlockInsertMenu(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             BlockTile(icon = Icons.Rounded.HorizontalRule, label = "Divider", subtitle = "Horizontal line",
-                color = MaterialTheme.colorScheme.errorContainer,
+                color = MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.weight(1f)) { onInsert(InsertBlockType.DIVIDER) }
             BlockTile(icon = Icons.Rounded.Checklist, label = "Checklist", subtitle = "Todo items",
-                color = MaterialTheme.colorScheme.tertiaryContainer,
+                color = MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.weight(1f)) { onInsert(InsertBlockType.CHECKLIST) }
         }
         Spacer(Modifier.height(24.dp))

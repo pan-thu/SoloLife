@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.compose.shimmer)
     implementation(libs.richeditor.compose)
     implementation(libs.coil.compose)
+    implementation("androidx.compose.ui:ui-text-google-fonts")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

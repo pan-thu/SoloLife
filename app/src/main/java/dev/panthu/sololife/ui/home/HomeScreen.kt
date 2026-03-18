@@ -953,7 +953,7 @@ private fun NotebookCard(
                 if (entry.content.isNotBlank()) {
                     Spacer(Modifier.height(5.dp))
                     Text(
-                        entry.content.replace(Regex("<[^>]*>"), "").trim(),
+                        android.text.Html.fromHtml(entry.content, android.text.Html.FROM_HTML_MODE_COMPACT).toString().trim(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,

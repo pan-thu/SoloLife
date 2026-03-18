@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import com.mohamedrejeb.richeditor.model.RichTextState
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditorDefaults
@@ -25,7 +26,8 @@ fun TextBlock(
         textStyle = LocalTextStyle.current.copy(
             fontSize = MaterialTheme.typography.bodyLarge.fontSize,
             color = MaterialTheme.colorScheme.onBackground,
-            lineHeight = MaterialTheme.typography.bodyLarge.lineHeight
+            lineHeight = MaterialTheme.typography.bodyLarge.lineHeight,
+            fontFamily = FontFamily.Cursive
         ),
         placeholder = {
             Text(

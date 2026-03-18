@@ -12,13 +12,10 @@ import androidx.compose.ui.unit.dp
 fun NotePageBackground(modifier: Modifier = Modifier) {
     val density = LocalDensity.current
     val lineSpacingPx = with(density) { 28.dp.toPx() }
-    val marginLinePx = with(density) { 40.dp.toPx() }
     val lineColor = Color(0xFFB8D4E8)
-    val marginColor = Color(0xFFFFB3B3)
 
-    // Pre-compute stroke widths outside DrawScope (toPx() needs Density receiver)
+    // Pre-compute stroke width outside DrawScope (toPx() needs Density receiver)
     val ruleStrokePx = with(density) { 1.dp.toPx() }
-    val marginStrokePx = with(density) { 1.5.dp.toPx() }
 
     Canvas(modifier = modifier) {
         // Horizontal ruled lines every 28dp starting at y = 28dp
@@ -33,13 +30,5 @@ fun NotePageBackground(modifier: Modifier = Modifier) {
             )
             y += lineSpacingPx
         }
-        // Vertical red margin line at x = 40dp
-        drawLine(
-            color = marginColor,
-            start = Offset(marginLinePx, 0f),
-            end = Offset(marginLinePx, size.height),
-            alpha = 0.4f,
-            strokeWidth = marginStrokePx
-        )
     }
 }

@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -285,7 +286,8 @@ fun BlockEditorScreen(
                             fontSize = MaterialTheme.typography.headlineLarge.fontSize,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground,
-                            lineHeight = MaterialTheme.typography.headlineLarge.lineHeight
+                            lineHeight = MaterialTheme.typography.headlineLarge.lineHeight,
+                            fontFamily = FontFamily.Cursive
                         ),
                         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                         decorationBox = { inner ->
@@ -322,6 +324,14 @@ fun BlockEditorScreen(
                             pendingDeletePaths = pendingDeletePaths + paths
                             blocks = blocks.filter { it.id != block.id }
                         },
+                        onDeleteBlock = {
+                            when (block) {
+                                is Block.Text -> richTextStates.remove(block.id)
+                                is Block.Image -> pendingDeletePaths = pendingDeletePaths + block.paths
+                                else -> Unit
+                            }
+                            blocks = blocks.filter { it.id != block.id }
+                        },
                         onChecklistChanged = { newItems ->
                             blocks = blocks.map {
                                 if (it.id == block.id) (it as Block.Checklist).copy(items = newItems) else it
@@ -335,16 +345,15 @@ fun BlockEditorScreen(
                 }
             }
 
-            // Formatting bubble — shown when a Text block has a non-collapsed selection
+            // Formatting bubble — shown whenever a text block is focused
             val focusedState = focusedBlockId?.let { richTextStates[it] }
-            val hasSelection = focusedState?.selection?.let { it.start != it.end } == true
-            if (focusedState != null && hasSelection) {
+            if (focusedState != null) {
                 FormattingBubble(
                     state = focusedState,
                     onDismiss = { focusedBlockId = null },
                     modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(start = 16.dp, top = 80.dp)
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 16.dp)
                 )
             }
         }
@@ -388,6 +397,7 @@ private fun BlockRow(
     focusedBlockId: String?,
     onFocusChange: (String, Boolean) -> Unit,
     onDeleteImageBlock: (List<String>) -> Unit,
+    onDeleteBlock: () -> Unit,
     onChecklistChanged: (List<CheckItem>) -> Unit,
     isFirst: Boolean,
     isLast: Boolean,
@@ -457,6 +467,17 @@ private fun BlockRow(
                     modifier = Modifier.size(18.dp),
                     tint = if (!isLast) MaterialTheme.colorScheme.onSurfaceVariant
                            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                )
+            }
+            IconButton(
+                onClick = onDeleteBlock,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    Icons.Rounded.Delete,
+                    contentDescription = "Delete block",
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
                 )
             }
         }

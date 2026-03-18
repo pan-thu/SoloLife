@@ -3,7 +3,6 @@ package dev.panthu.sololife.ui.diary
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -18,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -28,7 +26,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mohamedrejeb.richeditor.model.RichTextState
 import dev.panthu.sololife.data.model.Block
 import dev.panthu.sololife.data.model.CheckItem
-import dev.panthu.sololife.ui.components.AmbientOrbs
 import dev.panthu.sololife.ui.diary.blocks.*
 import dev.panthu.sololife.util.DateUtils
 import dev.panthu.sololife.util.deleteImage
@@ -206,12 +203,8 @@ fun BlockEditorScreen(
         }
     }
 
-    val primary = MaterialTheme.colorScheme.primary
-    val tertiary = MaterialTheme.colorScheme.tertiary
-    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-    AmbientOrbs(primary = primary, tertiary = tertiary, modifier = Modifier.fillMaxSize())
     Scaffold(
-        containerColor = Color.Transparent,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -251,7 +244,7 @@ fun BlockEditorScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         },
@@ -379,7 +372,6 @@ fun BlockEditorScreen(
             )
         }
     }
-    } // end outer Box
 
     // Date picker dialog
     if (showDatePicker) {

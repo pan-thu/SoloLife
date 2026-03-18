@@ -5,6 +5,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -210,7 +211,6 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BreadcrumbStrip(
     dateFilter: ExpenseDateFilter,
@@ -232,10 +232,10 @@ private fun BreadcrumbStrip(
                 items(12) { idx ->
                     val monthNum = idx + 1
                     val monthName = Month.of(monthNum).getDisplayName(TextStyle.SHORT, Locale.getDefault())
-                    FilterChip(
+                    BreadcrumbPill(
+                        label = monthName,
                         selected = monthNum == currentMonth,
-                        onClick = { onMonthSelected(selectedYear, monthNum) },
-                        label = { Text(monthName) }
+                        onClick = { onMonthSelected(selectedYear, monthNum) }
                     )
                 }
             }
@@ -251,20 +251,17 @@ private fun BreadcrumbStrip(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                FilterChip(
-                    selected = false,
-                    onClick = onClearToNone,
-                    label = { Text("← All") }
-                )
-                FilterChip(
+                BreadcrumbPill(label = "← All", selected = false, onClick = onClearToNone)
+                BreadcrumbPill(
+                    label = "$monthName · $totalFormatted",
                     selected = true,
-                    onClick = onClearToNone,   // tapping active Month chip also clears to None
-                    label = { Text("$monthName · $totalFormatted") },
+                    onClick = onClearToNone,
                     trailingIcon = {
                         Icon(
                             Icons.Rounded.Close,
                             contentDescription = "Clear",
-                            modifier = Modifier.size(FilterChipDefaults.IconSize)
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(14.dp)
                         )
                     }
                 )
@@ -288,20 +285,21 @@ private fun BreadcrumbStrip(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                FilterChip(
+                BreadcrumbPill(
+                    label = "← $monthName ${dateFilter.year}",
                     selected = false,
-                    onClick = { onClearToMonth(parentMonth) },
-                    label = { Text("← $monthName ${dateFilter.year}") }
+                    onClick = { onClearToMonth(parentMonth) }
                 )
-                FilterChip(
+                BreadcrumbPill(
+                    label = "Wk ${dateFilter.weekIndex + 1}: $rangeLabel · $totalFormatted",
                     selected = true,
-                    onClick = { onClearToMonth(parentMonth) },  // tapping active Week chip → back to Month
-                    label = { Text("Wk ${dateFilter.weekIndex + 1}: $rangeLabel · $totalFormatted") },
+                    onClick = { onClearToMonth(parentMonth) },
                     trailingIcon = {
                         Icon(
                             Icons.Rounded.Close,
                             contentDescription = "Clear",
-                            modifier = Modifier.size(FilterChipDefaults.IconSize)
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(14.dp)
                         )
                     }
                 )
@@ -471,6 +469,45 @@ private fun ExpenseRow(expense: Expense) {
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun BreadcrumbPill(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    trailingIcon: (@Composable () -> Unit)? = null
+) {
+    val primary = MaterialTheme.colorScheme.primary
+    val onBackground = MaterialTheme.colorScheme.onBackground
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(
+                if (selected) primary.copy(alpha = 0.12f) else Color.Transparent
+            )
+            .border(
+                width = 1.dp,
+                color = if (selected) primary.copy(alpha = 0.5f)
+                        else onBackground.copy(alpha = 0.25f),
+                shape = RoundedCornerShape(50)
+            )
+            .clickable(
+                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = if (selected) primary else onBackground
+        )
+        trailingIcon?.invoke()
     }
 }
 

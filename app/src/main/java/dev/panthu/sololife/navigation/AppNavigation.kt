@@ -8,7 +8,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import dev.panthu.sololife.ui.diary.DiaryDetailScreen
+import dev.panthu.sololife.ui.diary.BlockEditorScreen
 import dev.panthu.sololife.ui.diary.DiaryListScreen
 import dev.panthu.sololife.ui.expenses.ExpensesScreen
 import dev.panthu.sololife.ui.home.HomeScreen
@@ -65,7 +65,7 @@ fun AppNavigation(navController: NavHostController) {
             popEnterTransition = { subPopEnter },
             popExitTransition = { subPopExit }
         ) {
-            DiaryDetailScreen(entryId = null, onBack = { navController.popBackStack() })
+            BlockEditorScreen(entryId = null, onBack = { navController.popBackStack() })
         }
         composable(
             route = Screen.DiaryDetail.route,
@@ -76,7 +76,7 @@ fun AppNavigation(navController: NavHostController) {
             popExitTransition = { subPopExit }
         ) { backStack ->
             val id = backStack.arguments!!.getLong("entryId")
-            DiaryDetailScreen(entryId = id, onBack = { navController.popBackStack() })
+            BlockEditorScreen(entryId = id, onBack = { navController.popBackStack() })
         }
         composable(Screen.Expenses.route) {
             ExpensesScreen()

@@ -8,6 +8,7 @@ import dev.panthu.sololife.data.db.SoloLifeDatabase
 import dev.panthu.sololife.data.prefs.AppPreferences
 import dev.panthu.sololife.data.repository.DiaryRepository
 import dev.panthu.sololife.data.repository.ExpenseRepository
+import dev.panthu.sololife.util.DiaryNotificationScheduler
 
 class SoloLifeApp : Application() {
 
@@ -19,6 +20,9 @@ class SoloLifeApp : Application() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannels()
+        if (appPreferences.diaryNotificationEnabled) {
+            DiaryNotificationScheduler.schedule(this)
+        }
     }
 
     private fun createNotificationChannels() {

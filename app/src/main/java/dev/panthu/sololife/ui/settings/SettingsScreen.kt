@@ -237,7 +237,7 @@ fun SettingsScreen(vm: SettingsViewModel = viewModel()) {
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            "Remind you to write at 10 PM",
+                            "Remind you to write at 9 PM",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

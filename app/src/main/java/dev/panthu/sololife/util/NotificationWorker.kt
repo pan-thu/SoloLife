@@ -59,7 +59,7 @@ object DiaryNotificationScheduler {
     private const val WORK_TAG = "diary_reminder_work"
 
     fun schedule(context: Context) {
-        val delay = millisUntil(hour = 22, minute = 0)
+        val delay = millisUntil(hour = 21, minute = 0)
         val req = PeriodicWorkRequestBuilder<NotificationWorker>(1, TimeUnit.DAYS)
             .setInitialDelay(delay, TimeUnit.MILLISECONDS)
             .addTag(WORK_TAG)

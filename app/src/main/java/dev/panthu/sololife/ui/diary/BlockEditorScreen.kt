@@ -299,8 +299,10 @@ fun BlockEditorScreen(
                                 if (title.isEmpty()) {
                                     Text(
                                         "Title",
-                                        style = MaterialTheme.typography.headlineLarge,
-                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.headlineLarge.copy(
+                                            fontFamily = CaveatFontFamily,
+                                            fontWeight = FontWeight.Bold
+                                        ),
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                                     )
                                 }

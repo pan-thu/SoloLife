@@ -10,6 +10,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.sp
 import com.mohamedrejeb.richeditor.model.RichTextState
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditorDefaults
@@ -30,15 +31,15 @@ fun TextBlock(
         state = state,
         modifier = modifier.onFocusChanged { onFocusChanged(it.isFocused) },
         textStyle = LocalTextStyle.current.copy(
-            fontSize = MaterialTheme.typography.bodyLarge.fontSize,
+            fontSize = 20.sp,
             color = MaterialTheme.colorScheme.onBackground,
-            lineHeight = MaterialTheme.typography.bodyLarge.lineHeight,
+            lineHeight = 30.sp,
             fontFamily = CaveatFontFamily
         ),
         placeholder = {
             Text(
                 text = "Start writing...",
-                style = MaterialTheme.typography.bodyLarge.copy(fontFamily = CaveatFontFamily),
+                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp, lineHeight = 30.sp, fontFamily = CaveatFontFamily),
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
             )
         },

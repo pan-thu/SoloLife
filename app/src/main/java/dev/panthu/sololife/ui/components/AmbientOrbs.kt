@@ -31,24 +31,24 @@ fun AmbientOrbs(
         val orb1Y = size.height * 0.05f + drift1 * size.height * 0.04f
         drawCircle(
             brush = Brush.radialGradient(
-                listOf(primary.copy(alpha = 0.38f), Color.Transparent),
+                listOf(primary.copy(alpha = 0.22f), Color.Transparent),
                 center = Offset(orb1X, orb1Y),
-                radius = size.width * 0.55f
+                radius = size.width * 0.50f
             ),
             center = Offset(orb1X, orb1Y),
-            radius = size.width * 0.55f
+            radius = size.width * 0.50f
         )
 
         val orb2X = size.width * 0.88f - drift2 * size.width * 0.08f
         val orb2Y = size.height * 0.28f + drift2 * size.height * 0.05f
         drawCircle(
             brush = Brush.radialGradient(
-                listOf(tertiary.copy(alpha = 0.24f), Color.Transparent),
+                listOf(tertiary.copy(alpha = 0.14f), Color.Transparent),
                 center = Offset(orb2X, orb2Y),
-                radius = size.width * 0.48f
+                radius = size.width * 0.44f
             ),
             center = Offset(orb2X, orb2Y),
-            radius = size.width * 0.48f
+            radius = size.width * 0.44f
         )
     }
 }

@@ -5,17 +5,19 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class Block {
+    abstract val id: String
+
     @Serializable @SerialName("text")
-    data class Text(val id: String, val html: String) : Block()
+    data class Text(override val id: String, val html: String) : Block()
 
     @Serializable @SerialName("image")
-    data class Image(val id: String, val paths: List<String>) : Block()
+    data class Image(override val id: String, val paths: List<String>) : Block()
 
     @Serializable @SerialName("divider")
-    data class Divider(val id: String) : Block()
+    data class Divider(override val id: String) : Block()
 
     @Serializable @SerialName("checklist")
-    data class Checklist(val id: String, val items: List<CheckItem>) : Block()
+    data class Checklist(override val id: String, val items: List<CheckItem>) : Block()
 }
 
 @Serializable

@@ -56,6 +56,8 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
     val state by vm.uiState.collectAsState()
     var showSheet by remember { mutableStateOf(false) }
     val view = LocalView.current
+    val today = remember { LocalDate.now() }
+    var selectedYear by remember { mutableStateOf(today.year) }
 
     Scaffold(
         topBar = {
@@ -63,7 +65,25 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
                 title = { Text("Expenses", style = MaterialTheme.typography.titleLarge) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
-                )
+                ),
+                actions = {
+                    if (state.dateFilter is ExpenseDateFilter.None) {
+                        IconButton(onClick = { selectedYear-- }) {
+                            Icon(Icons.Rounded.ChevronLeft, contentDescription = "Previous year")
+                        }
+                        Text(
+                            text = selectedYear.toString(),
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.align(Alignment.CenterVertically)
+                        )
+                        IconButton(
+                            onClick = { selectedYear++ },
+                            enabled = selectedYear < today.year
+                        ) {
+                            Icon(Icons.Rounded.ChevronRight, contentDescription = "Next year")
+                        }
+                    }
+                }
             )
         },
         floatingActionButton = {
@@ -87,9 +107,9 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
             BreadcrumbStrip(
                 dateFilter = state.dateFilter,
                 displayTotal = state.displayTotal,
-                onMonthSelected = { year, month ->
-                    vm.setDateFilter(ExpenseDateFilter.Month(year, month))
-                },
+                selectedYear = selectedYear,
+                onYearChange = { selectedYear = it },
+                onMonthSelected = { year, month -> vm.setDateFilter(ExpenseDateFilter.Month(year, month)) },
                 onClearToNone = { vm.clearDateFilter() },
                 onClearToMonth = { vm.setDateFilter(it) }
             )
@@ -188,54 +208,28 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
 private fun BreadcrumbStrip(
     dateFilter: ExpenseDateFilter,
     displayTotal: Double,
+    selectedYear: Int,
+    onYearChange: (Int) -> Unit,
     onMonthSelected: (year: Int, month: Int) -> Unit,
     onClearToNone: () -> Unit,
     onClearToMonth: (ExpenseDateFilter.Month) -> Unit
 ) {
+    val today = remember { LocalDate.now() }
     when (dateFilter) {
         is ExpenseDateFilter.None -> {
-            val today = remember { LocalDate.now() }
-            var selectedYear by remember { mutableStateOf(today.year) }
             val currentMonth = if (selectedYear == today.year) today.monthValue else -1
-            Column {
-                // Year navigation row
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { selectedYear-- }) {
-                        Icon(Icons.Rounded.ChevronLeft, contentDescription = "Previous year")
-                    }
-                    Text(
-                        text = selectedYear.toString(),
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(horizontal = 16.dp)
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(12) { idx ->
+                    val monthNum = idx + 1
+                    val monthName = Month.of(monthNum).getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                    FilterChip(
+                        selected = monthNum == currentMonth,
+                        onClick = { onMonthSelected(selectedYear, monthNum) },
+                        label = { Text(monthName) }
                     )
-                    IconButton(
-                        onClick = { selectedYear++ },
-                        enabled = selectedYear < today.year
-                    ) {
-                        Icon(Icons.Rounded.ChevronRight, contentDescription = "Next year")
-                    }
-                }
-                // Month chips
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(12) { idx ->
-                        val monthNum = idx + 1
-                        val monthName = Month.of(monthNum)
-                            .getDisplayName(TextStyle.SHORT, Locale.getDefault())
-                        FilterChip(
-                            selected = monthNum == currentMonth,
-                            onClick = { onMonthSelected(selectedYear, monthNum) },
-                            label = { Text(monthName) }
-                        )
-                    }
                 }
             }
         }

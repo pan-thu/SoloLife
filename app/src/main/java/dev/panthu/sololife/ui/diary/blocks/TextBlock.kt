@@ -29,9 +29,9 @@ fun TextBlock(
         ),
         placeholder = {
             Text(
-                text = "Write something…",
+                text = "Start writing...",
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
             )
         },
         colors = RichTextEditorDefaults.richTextEditorColors(

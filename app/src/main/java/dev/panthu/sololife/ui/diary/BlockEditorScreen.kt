@@ -8,7 +8,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -51,7 +50,7 @@ fun BlockEditorScreen(
     var blocks by remember { mutableStateOf<List<Block>>(emptyList()) }
     val richTextStates = remember { mutableStateMapOf<String, RichTextState>() }
     var focusedBlockId by remember { mutableStateOf<String?>(null) }
-    var showInsertMenuForBlockId by remember { mutableStateOf<String?>(null) }
+    var showInsertMenu by remember { mutableStateOf(false) }
     var pendingDeletePaths by remember { mutableStateOf<List<String>>(emptyList()) }
     var date by remember { mutableStateOf(System.currentTimeMillis()) }
     var loaded by remember { mutableStateOf(entryId == null) }
@@ -146,15 +145,16 @@ fun BlockEditorScreen(
         }
     }
 
-    fun insertBlock(afterBlockId: String, type: InsertBlockType) {
-        showInsertMenuForBlockId = null
+    fun insertBlock(type: InsertBlockType) {
+        showInsertMenu = false
+        val afterBlockId = focusedBlockId?.takeIf { id -> blocks.any { it.id == id } }
         when (type) {
             InsertBlockType.TEXT -> {
                 val newId = UUID.randomUUID().toString()
                 richTextStates[newId] = RichTextState()
                 val newBlock = Block.Text(id = newId, html = "")
                 blocks = blocks.toMutableList().also { list ->
-                    val idx = list.indexOfFirst { it.id == afterBlockId }
+                    val idx = if (afterBlockId != null) list.indexOfFirst { it.id == afterBlockId } else -1
                     list.add(if (idx >= 0) idx + 1 else list.size, newBlock)
                 }
                 focusedBlockId = newId
@@ -168,7 +168,7 @@ fun BlockEditorScreen(
             InsertBlockType.DIVIDER -> {
                 val newBlock = Block.Divider(id = UUID.randomUUID().toString())
                 blocks = blocks.toMutableList().also { list ->
-                    val idx = list.indexOfFirst { it.id == afterBlockId }
+                    val idx = if (afterBlockId != null) list.indexOfFirst { it.id == afterBlockId } else -1
                     list.add(if (idx >= 0) idx + 1 else list.size, newBlock)
                 }
             }
@@ -178,9 +178,27 @@ fun BlockEditorScreen(
                     items = listOf(CheckItem(id = UUID.randomUUID().toString(), text = "", checked = false))
                 )
                 blocks = blocks.toMutableList().also { list ->
-                    val idx = list.indexOfFirst { it.id == afterBlockId }
+                    val idx = if (afterBlockId != null) list.indexOfFirst { it.id == afterBlockId } else -1
                     list.add(if (idx >= 0) idx + 1 else list.size, newBlock)
                 }
+            }
+        }
+    }
+
+    fun moveBlockUp(blockId: String) {
+        val idx = blocks.indexOfFirst { it.id == blockId }
+        if (idx > 0) {
+            blocks = blocks.toMutableList().also { list ->
+                val tmp = list[idx]; list[idx] = list[idx - 1]; list[idx - 1] = tmp
+            }
+        }
+    }
+
+    fun moveBlockDown(blockId: String) {
+        val idx = blocks.indexOfFirst { it.id == blockId }
+        if (idx >= 0 && idx < blocks.lastIndex) {
+            blocks = blocks.toMutableList().also { list ->
+                val tmp = list[idx]; list[idx] = list[idx + 1]; list[idx + 1] = tmp
             }
         }
     }
@@ -228,6 +246,11 @@ fun BlockEditorScreen(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { showInsertMenu = true }) {
+                Icon(Icons.Rounded.Add, contentDescription = "Add block")
+            }
         }
     ) { padding ->
         if (!loaded) {
@@ -247,7 +270,7 @@ fun BlockEditorScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
-                    start = 48.dp,
+                    start = 16.dp,
                     end = 16.dp,
                     top = 28.dp,
                     bottom = 80.dp
@@ -289,13 +312,12 @@ fun BlockEditorScreen(
                     )
                 }
                 // Block rows
-                itemsIndexed(blocks, key = { _, block -> block.id }) { _, block ->
+                itemsIndexed(blocks, key = { _, block -> block.id }) { index, block ->
                     BlockRow(
                         block = block,
                         richTextStates = richTextStates,
                         focusedBlockId = focusedBlockId,
                         onFocusChange = { id, focused -> if (focused) focusedBlockId = id },
-                        onPlusClick = { showInsertMenuForBlockId = block.id },
                         onDeleteImageBlock = { paths ->
                             pendingDeletePaths = pendingDeletePaths + paths
                             blocks = blocks.filter { it.id != block.id }
@@ -304,7 +326,11 @@ fun BlockEditorScreen(
                             blocks = blocks.map {
                                 if (it.id == block.id) (it as Block.Checklist).copy(items = newItems) else it
                             }
-                        }
+                        },
+                        isFirst = index == 0,
+                        isLast = index == blocks.lastIndex,
+                        onMoveUp = { moveBlockUp(block.id) },
+                        onMoveDown = { moveBlockDown(block.id) }
                     )
                 }
             }
@@ -318,16 +344,16 @@ fun BlockEditorScreen(
                     onDismiss = { focusedBlockId = null },
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .padding(start = 48.dp, top = 80.dp)
+                        .padding(start = 16.dp, top = 80.dp)
                 )
             }
         }
 
         // Insert menu sheet
-        if (showInsertMenuForBlockId != null) {
+        if (showInsertMenu) {
             BlockInsertMenu(
-                onInsert = { type -> insertBlock(showInsertMenuForBlockId!!, type) },
-                onDismiss = { showInsertMenuForBlockId = null }
+                onInsert = { type -> insertBlock(type) },
+                onDismiss = { showInsertMenu = false }
             )
         }
     }
@@ -361,61 +387,76 @@ private fun BlockRow(
     richTextStates: Map<String, RichTextState>,
     focusedBlockId: String?,
     onFocusChange: (String, Boolean) -> Unit,
-    onPlusClick: () -> Unit,
     onDeleteImageBlock: (List<String>) -> Unit,
-    onChecklistChanged: (List<CheckItem>) -> Unit
+    onChecklistChanged: (List<CheckItem>) -> Unit,
+    isFirst: Boolean,
+    isLast: Boolean,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxWidth()) {
-        // "+" button in left margin (positioned left of the 48dp content inset)
-        Box(
-            modifier = Modifier
-                .size(20.dp)
-                .align(Alignment.TopStart)
-                .offset(x = (-38).dp, y = 8.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.secondaryContainer)
-                .clickable(onClick = onPlusClick),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                Icons.Rounded.Add,
-                contentDescription = "Insert block",
-                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                modifier = Modifier.size(14.dp)
-            )
-        }
-
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         // Block content
-        when (block) {
-            is Block.Text -> {
-                val state = richTextStates[block.id]
-                if (state != null) {
-                    TextBlock(
-                        state = state,
-                        modifier = Modifier.fillMaxWidth(),
-                        onFocusChanged = { focused -> onFocusChange(block.id, focused) }
+        Box(modifier = Modifier.weight(1f)) {
+            when (block) {
+                is Block.Text -> {
+                    val state = richTextStates[block.id]
+                    if (state != null) {
+                        TextBlock(
+                            state = state,
+                            modifier = Modifier.fillMaxWidth(),
+                            onFocusChanged = { focused -> onFocusChange(block.id, focused) }
+                        )
+                    }
+                }
+                is Block.Image -> {
+                    ImageBlock(
+                        paths = block.paths,
+                        onDeleteBlock = { onDeleteImageBlock(block.paths) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    )
+                }
+                is Block.Divider -> {
+                    DividerBlock(modifier = Modifier.fillMaxWidth())
+                }
+                is Block.Checklist -> {
+                    ChecklistBlock(
+                        items = block.items,
+                        onItemsChanged = onChecklistChanged,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
                     )
                 }
             }
-            is Block.Image -> {
-                ImageBlock(
-                    paths = block.paths,
-                    onDeleteBlock = { onDeleteImageBlock(block.paths) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
+        }
+        // Reorder column on the right
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            IconButton(
+                onClick = onMoveUp,
+                enabled = !isFirst,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    Icons.Rounded.KeyboardArrowUp,
+                    contentDescription = "Move block up",
+                    modifier = Modifier.size(18.dp),
+                    tint = if (!isFirst) MaterialTheme.colorScheme.onSurfaceVariant
+                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
                 )
             }
-            is Block.Divider -> {
-                DividerBlock(modifier = Modifier.fillMaxWidth())
-            }
-            is Block.Checklist -> {
-                ChecklistBlock(
-                    items = block.items,
-                    onItemsChanged = onChecklistChanged,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
+            IconButton(
+                onClick = onMoveDown,
+                enabled = !isLast,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    Icons.Rounded.KeyboardArrowDown,
+                    contentDescription = "Move block down",
+                    modifier = Modifier.size(18.dp),
+                    tint = if (!isLast) MaterialTheme.colorScheme.onSurfaceVariant
+                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
                 )
             }
         }

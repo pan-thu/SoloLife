@@ -14,6 +14,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -193,21 +195,47 @@ private fun BreadcrumbStrip(
     when (dateFilter) {
         is ExpenseDateFilter.None -> {
             val today = remember { LocalDate.now() }
-            val currentYear = today.year
-            val currentMonth = today.monthValue
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(12) { idx ->
-                    val monthNum = idx + 1
-                    val monthName = Month.of(monthNum)
-                        .getDisplayName(TextStyle.SHORT, Locale.getDefault())
-                    FilterChip(
-                        selected = monthNum == currentMonth,
-                        onClick = { onMonthSelected(currentYear, monthNum) },
-                        label = { Text(monthName) }
+            var selectedYear by remember { mutableStateOf(today.year) }
+            val currentMonth = if (selectedYear == today.year) today.monthValue else -1
+            Column {
+                // Year navigation row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { selectedYear-- }) {
+                        Icon(Icons.Rounded.ChevronLeft, contentDescription = "Previous year")
+                    }
+                    Text(
+                        text = selectedYear.toString(),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     )
+                    IconButton(
+                        onClick = { selectedYear++ },
+                        enabled = selectedYear < today.year
+                    ) {
+                        Icon(Icons.Rounded.ChevronRight, contentDescription = "Next year")
+                    }
+                }
+                // Month chips
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(12) { idx ->
+                        val monthNum = idx + 1
+                        val monthName = Month.of(monthNum)
+                            .getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                        FilterChip(
+                            selected = monthNum == currentMonth,
+                            onClick = { onMonthSelected(selectedYear, monthNum) },
+                            label = { Text(monthName) }
+                        )
+                    }
                 }
             }
         }

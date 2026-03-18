@@ -15,16 +15,13 @@ import kotlinx.serialization.json.Json
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-enum class DiaryViewMode { LIST, CALENDAR }
-
 data class DiaryListUiState(
     val entries: List<DiaryEntry> = emptyList(),
     val query: String = "",
     val isLoaded: Boolean = false,
-    val viewMode: DiaryViewMode = DiaryViewMode.LIST,
     val calendarEntryDates: Set<Long> = emptySet(),
     val currentStreak: Int = 0,
-    val selectedDate: java.time.LocalDate? = null   // NEW
+    val selectedDate: java.time.LocalDate? = null
 )
 
 class DiaryViewModel(app: Application) : AndroidViewModel(app) {
@@ -33,20 +30,14 @@ class DiaryViewModel(app: Application) : AndroidViewModel(app) {
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
 
-    private val _viewMode = MutableStateFlow(DiaryViewMode.LIST)
-
     private val _selectedDate = MutableStateFlow<java.time.LocalDate?>(null)
 
     fun setSelectedDate(date: java.time.LocalDate) {
-        _selectedDate.value = if (_selectedDate.value == date) null else date
+        _selectedDate.value = date
     }
 
     fun clearDateFilter() {
         _selectedDate.value = null
-    }
-
-    fun toggleViewMode() {
-        _viewMode.value = if (_viewMode.value == DiaryViewMode.LIST) DiaryViewMode.CALENDAR else DiaryViewMode.LIST
     }
 
     private fun currentMonthStart(): Long {
@@ -70,13 +61,12 @@ class DiaryViewModel(app: Application) : AndroidViewModel(app) {
         _query.flatMapLatest { q ->
             if (q.isBlank()) _allEntries else repo.search(q)
         },
-        _viewMode,
         run {
             repo.getEntryDatesInRange(currentMonthStart(), currentMonthEnd())
         },
         _allEntries,
         _selectedDate
-    ) { filteredEntries, viewMode, monthDates, allEntries, selectedDate ->
+    ) { filteredEntries, monthDates, allEntries, selectedDate ->
         val entryDaySet = monthDates.map { DateUtils.dayStart(it) }.toSet()
         val streak = DateUtils.currentStreak(allEntries.map { it.date })
         val displayEntries = if (selectedDate == null) filteredEntries else {
@@ -88,7 +78,6 @@ class DiaryViewModel(app: Application) : AndroidViewModel(app) {
             entries = displayEntries,
             query = _query.value,
             isLoaded = true,
-            viewMode = viewMode,
             calendarEntryDates = entryDaySet,
             currentStreak = streak,
             selectedDate = selectedDate

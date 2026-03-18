@@ -1,5 +1,6 @@
 package dev.panthu.sololife.ui.diary
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,11 +13,11 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.EditNote
-import androidx.compose.material.icons.rounded.FormatListBulleted
-import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -49,6 +50,9 @@ fun DiaryListScreen(
 ) {
     val state by vm.uiState.collectAsState()
     val view = LocalView.current
+
+    var calendarExpanded by remember { mutableStateOf(false) }
+    var pendingDate by remember { mutableStateOf<LocalDate?>(null) }
 
     Scaffold(
         topBar = {
@@ -84,14 +88,14 @@ fun DiaryListScreen(
                         }
                         Spacer(Modifier.width(4.dp))
                     }
-                    // View mode toggle
-                    IconButton(onClick = vm::toggleViewMode) {
+                    // Calendar toggle
+                    IconButton(onClick = {
+                        calendarExpanded = !calendarExpanded
+                        if (!calendarExpanded) pendingDate = null
+                    }) {
                         Icon(
-                            imageVector = if (state.viewMode == DiaryViewMode.CALENDAR)
-                                Icons.Rounded.FormatListBulleted
-                            else
-                                Icons.Rounded.GridView,
-                            contentDescription = "Toggle view"
+                            imageVector = Icons.Rounded.CalendarMonth,
+                            contentDescription = "Toggle calendar"
                         )
                     }
                 }
@@ -143,25 +147,30 @@ fun DiaryListScreen(
                     )
                 }
 
+                // Collapsible calendar panel
+                AnimatedVisibility(visible = calendarExpanded) {
+                    val zone = ZoneId.systemDefault()
+                    val monthStart = LocalDate.now(zone).withDayOfMonth(1)
+                        .atStartOfDay(zone).toInstant().toEpochMilli()
+                    DiaryCalendarView(
+                        currentMonthStart = monthStart,
+                        entryDates = state.calendarEntryDates,
+                        selectedDate = state.selectedDate,
+                        pendingDate = pendingDate,
+                        onDayClick = { date -> pendingDate = if (pendingDate == date) null else date },
+                        onConfirm = {
+                            pendingDate?.let { vm.setSelectedDate(it) }
+                            pendingDate = null
+                            calendarExpanded = false
+                        }
+                    )
+                }
+
+                // Entry list — always visible
                 when {
                     !state.isLoaded -> {
                         LazyColumn {
                             items(5) { ShimmerDiaryCard() }
-                        }
-                    }
-                    state.viewMode == DiaryViewMode.CALENDAR -> {
-                        val zone = ZoneId.systemDefault()
-                        val monthStart = LocalDate.now(zone).withDayOfMonth(1)
-                            .atStartOfDay(zone).toInstant().toEpochMilli()
-                        LazyColumn {
-                            item {
-                                DiaryCalendarView(
-                                    currentMonthStart = monthStart,
-                                    entryDates = state.calendarEntryDates,
-                                    selectedDate = state.selectedDate,
-                                    onDayClick = { date -> vm.setSelectedDate(date) }
-                                )
-                            }
                         }
                     }
                     state.entries.isEmpty() -> {
@@ -299,7 +308,9 @@ private fun DiaryCalendarView(
     currentMonthStart: Long,
     entryDates: Set<Long>,
     selectedDate: LocalDate? = null,
-    onDayClick: (LocalDate) -> Unit
+    pendingDate: LocalDate? = null,
+    onDayClick: (LocalDate) -> Unit,
+    onConfirm: (() -> Unit)? = null
 ) {
     val zone = ZoneId.systemDefault()
     val monthDate = Instant.ofEpochMilli(currentMonthStart).atZone(zone).toLocalDate()
@@ -352,6 +363,7 @@ private fun DiaryCalendarView(
                 val hasEntry = entryDates.contains(dayMillis)
                 val isToday = dayDate == LocalDate.now(zone)
                 val isSelected = selectedDate == dayDate
+                val isPending = pendingDate == dayDate
 
                 Box(
                     modifier = Modifier
@@ -361,6 +373,7 @@ private fun DiaryCalendarView(
                         .background(
                             when {
                                 isSelected -> MaterialTheme.colorScheme.primary
+                                isPending  -> MaterialTheme.colorScheme.secondary
                                 isToday    -> MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                                 else       -> Color.Transparent
                             }
@@ -376,6 +389,7 @@ private fun DiaryCalendarView(
                             style = MaterialTheme.typography.labelMedium,
                             color = when {
                                 isSelected -> MaterialTheme.colorScheme.onPrimary
+                                isPending  -> MaterialTheme.colorScheme.onSecondary
                                 isToday    -> MaterialTheme.colorScheme.primary
                                 else       -> MaterialTheme.colorScheme.onSurface
                             }
@@ -390,6 +404,24 @@ private fun DiaryCalendarView(
                             )
                         }
                     }
+                }
+            }
+        }
+
+        // Confirm button row
+        if (onConfirm != null && pendingDate != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, bottom = 4.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                IconButton(onClick = onConfirm) {
+                    Icon(
+                        Icons.Rounded.Check,
+                        contentDescription = "Confirm date filter",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }

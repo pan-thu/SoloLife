@@ -129,9 +129,13 @@ fun BlockEditorScreen(
             } else block
         }
         scope.launch {
-            vm.saveBlocks(entryId, title.trim(), updatedBlocks, date)
-            pendingDeletePaths.forEach { deleteImage(it) }
-            onBack()
+            try {
+                vm.saveBlocks(entryId, title.trim(), updatedBlocks, date)
+                pendingDeletePaths.forEach { deleteImage(it) }
+                onBack()
+            } catch (e: Exception) {
+                isSaving = false
+            }
         }
     }
 

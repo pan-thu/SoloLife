@@ -22,12 +22,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.panthu.sololife.data.db.Expense
 import dev.panthu.sololife.ui.components.AmountText
+import dev.panthu.sololife.ui.components.AmbientOrbs
 import dev.panthu.sololife.ui.components.CategoryBreakdownBar
 import dev.panthu.sololife.ui.components.ExpensesEmptyState
 import dev.panthu.sololife.ui.components.ShimmerExpenseCard
@@ -59,12 +61,17 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
     val today = remember { LocalDate.now() }
     var selectedYear by remember { mutableStateOf(today.year) }
 
+    val primary = MaterialTheme.colorScheme.primary
+    val tertiary = MaterialTheme.colorScheme.tertiary
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    AmbientOrbs(primary = primary, tertiary = tertiary, modifier = Modifier.fillMaxSize())
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("Expenses", style = MaterialTheme.typography.titleLarge) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = Color.Transparent
                 ),
                 actions = {
                     if (state.dateFilter is ExpenseDateFilter.None) {
@@ -96,7 +103,6 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
                 Icon(Icons.Rounded.Add, contentDescription = "Add expense")
             }
         },
-        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
@@ -178,6 +184,7 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
             }
         }
     }
+    } // end outer Box
 
     // Add expense sheet
     if (showSheet) {

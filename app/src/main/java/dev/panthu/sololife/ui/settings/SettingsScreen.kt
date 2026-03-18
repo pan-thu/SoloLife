@@ -8,6 +8,7 @@ import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -18,6 +19,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -25,6 +27,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.panthu.sololife.SoloLifeApp
+import dev.panthu.sololife.ui.components.AmbientOrbs
 import dev.panthu.sololife.data.db.DiaryEntry
 import dev.panthu.sololife.data.db.Expense
 import dev.panthu.sololife.util.DataTransfer
@@ -137,16 +140,20 @@ fun SettingsScreen(vm: SettingsViewModel = viewModel()) {
 
     val exportData by vm.data.collectAsState()
 
+    val primary = MaterialTheme.colorScheme.primary
+    val tertiary = MaterialTheme.colorScheme.tertiary
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    AmbientOrbs(primary = primary, tertiary = tertiary, modifier = Modifier.fillMaxSize())
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("Settings", style = MaterialTheme.typography.titleLarge) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = Color.Transparent
                 )
             )
         },
-        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
@@ -286,6 +293,7 @@ fun SettingsScreen(vm: SettingsViewModel = viewModel()) {
             )
         }
     }
+    } // end outer Box
 
     // Import mode dialog
     showImportDialog?.let { uri ->

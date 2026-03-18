@@ -31,6 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.panthu.sololife.data.db.DiaryEntry
+import dev.panthu.sololife.ui.components.AmbientOrbs
 import dev.panthu.sololife.ui.components.DiaryEmptyState
 import dev.panthu.sololife.ui.components.ShimmerDiaryCard
 import dev.panthu.sololife.ui.components.SwipeActionsContainer
@@ -54,12 +55,17 @@ fun DiaryListScreen(
     var calendarExpanded by remember { mutableStateOf(false) }
     var pendingDate by remember { mutableStateOf<LocalDate?>(null) }
 
+    val primary = MaterialTheme.colorScheme.primary
+    val tertiary = MaterialTheme.colorScheme.tertiary
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    AmbientOrbs(primary = primary, tertiary = tertiary, modifier = Modifier.fillMaxSize())
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("Diary", style = MaterialTheme.typography.titleLarge) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = Color.Transparent
                 ),
                 actions = {
                     // Streak badge
@@ -111,7 +117,6 @@ fun DiaryListScreen(
                 Icon(Icons.Rounded.EditNote, contentDescription = "New entry")
             }
         },
-        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Box(
             modifier = Modifier
@@ -203,6 +208,7 @@ fun DiaryListScreen(
             }
         }
     }
+    } // end outer Box
 }
 
 @Composable

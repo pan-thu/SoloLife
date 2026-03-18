@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -27,6 +28,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mohamedrejeb.richeditor.model.RichTextState
 import dev.panthu.sololife.data.model.Block
 import dev.panthu.sololife.data.model.CheckItem
+import dev.panthu.sololife.ui.components.AmbientOrbs
 import dev.panthu.sololife.ui.diary.blocks.*
 import dev.panthu.sololife.util.DateUtils
 import dev.panthu.sololife.util.deleteImage
@@ -204,7 +206,12 @@ fun BlockEditorScreen(
         }
     }
 
+    val primary = MaterialTheme.colorScheme.primary
+    val tertiary = MaterialTheme.colorScheme.tertiary
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    AmbientOrbs(primary = primary, tertiary = tertiary, modifier = Modifier.fillMaxSize())
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -244,7 +251,7 @@ fun BlockEditorScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = Color.Transparent
                 )
             )
         },
@@ -372,6 +379,7 @@ fun BlockEditorScreen(
             )
         }
     }
+    } // end outer Box
 
     // Date picker dialog
     if (showDatePicker) {
@@ -509,7 +517,7 @@ private fun BlockRow(
                     modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
-                        Icons.Rounded.Delete,
+                        Icons.Rounded.DeleteOutline,
                         contentDescription = "Delete block",
                         modifier = Modifier.size(18.dp),
                         tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)

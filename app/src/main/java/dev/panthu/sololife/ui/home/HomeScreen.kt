@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.panthu.sololife.data.db.DiaryEntry
 import dev.panthu.sololife.data.db.Expense
+import dev.panthu.sololife.ui.components.AmbientOrbs
 import dev.panthu.sololife.ui.expenses.ExpenseFormSheet
 import dev.panthu.sololife.util.DateUtils
 import dev.panthu.sololife.util.info
@@ -58,7 +59,7 @@ fun HomeScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(bg)) {
 
-        AmbientOrbs(primary = primary, tertiary = tertiary)
+        AmbientOrbs(primary = primary, tertiary = tertiary, modifier = Modifier.fillMaxSize())
 
         Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
 
@@ -353,52 +354,6 @@ private fun WeekDotsRow(weekDays: List<Boolean>, primary: Color) {
                 )
             }
         }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Ambient orbs
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun AmbientOrbs(primary: Color, tertiary: Color) {
-    val infiniteTransition = rememberInfiniteTransition(label = "orbs")
-
-    val drift1 by infiniteTransition.animateFloat(
-        initialValue = 0f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(9000, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "drift1"
-    )
-    val drift2 by infiniteTransition.animateFloat(
-        initialValue = 1f, targetValue = 0f,
-        animationSpec = infiniteRepeatable(tween(12000, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "drift2"
-    )
-
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        val orb1X = size.width * 0.10f + drift1 * size.width * 0.08f
-        val orb1Y = size.height * 0.05f + drift1 * size.height * 0.04f
-        drawCircle(
-            brush = Brush.radialGradient(
-                listOf(primary.copy(alpha = 0.22f), Color.Transparent),
-                center = Offset(orb1X, orb1Y),
-                radius = size.width * 0.5f
-            ),
-            center = Offset(orb1X, orb1Y),
-            radius = size.width * 0.5f
-        )
-
-        val orb2X = size.width * 0.88f - drift2 * size.width * 0.08f
-        val orb2Y = size.height * 0.28f + drift2 * size.height * 0.05f
-        drawCircle(
-            brush = Brush.radialGradient(
-                listOf(tertiary.copy(alpha = 0.12f), Color.Transparent),
-                center = Offset(orb2X, orb2Y),
-                radius = size.width * 0.42f
-            ),
-            center = Offset(orb2X, orb2Y),
-            radius = size.width * 0.42f
-        )
     }
 }
 

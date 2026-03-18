@@ -10,10 +10,13 @@ import java.util.UUID
 
 suspend fun saveImage(context: Context, uri: Uri): String = withContext(Dispatchers.IO) {
     val dir = File(context.filesDir, "diary_images").also { it.mkdirs() }
-    val ext = uri.lastPathSegment
-        ?.substringAfterLast('.', "")
-        ?.takeIf { it.isNotBlank() }
-        ?: "jpg"
+    val mimeType = context.contentResolver.getType(uri)
+    val ext = when (mimeType) {
+        "image/png"  -> "png"
+        "image/webp" -> "webp"
+        "image/gif"  -> "gif"
+        else         -> "jpg"
+    }
     val dest = File(dir, "${UUID.randomUUID()}.$ext")
     val inputStream = context.contentResolver.openInputStream(uri)
         ?: error("Cannot open input stream for $uri")

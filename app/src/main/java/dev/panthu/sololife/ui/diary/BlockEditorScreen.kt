@@ -105,6 +105,8 @@ fun BlockEditorScreen(
                 }
                 pendingImageInsertAfterBlockId = null
             }
+        } else {
+            pendingImageInsertAfterBlockId = null
         }
     }
 
@@ -120,7 +122,12 @@ fun BlockEditorScreen(
 
     fun save() {
         if (isSaving) return
-        if (isEmptyEntry()) { onBack(); return }
+        if (isEmptyEntry()) {
+            blocks.filterIsInstance<Block.Image>().flatMap { it.paths }.forEach { deleteImage(it) }
+            pendingDeletePaths.forEach { deleteImage(it) }
+            onBack()
+            return
+        }
         isSaving = true
         // Flush RichTextState HTML back into block list before saving
         val updatedBlocks = blocks.map { block ->
@@ -153,8 +160,10 @@ fun BlockEditorScreen(
                 focusedBlockId = newId
             }
             InsertBlockType.IMAGE -> {
-                pendingImageInsertAfterBlockId = afterBlockId
-                imagePicker.launch("image/*")
+                if (pendingImageInsertAfterBlockId == null) {
+                    pendingImageInsertAfterBlockId = afterBlockId
+                    imagePicker.launch("image/*")
+                }
             }
             InsertBlockType.DIVIDER -> {
                 val newBlock = Block.Divider(id = UUID.randomUUID().toString())

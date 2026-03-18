@@ -128,8 +128,9 @@ class DiaryViewModel(app: Application) : AndroidViewModel(app) {
     suspend fun getEntryAsBlocks(id: Long): Pair<String, List<Block>>? {
         val entry = repo.getById(id) ?: return null
         if (entry.blocksJson.isNotBlank()) {
-            val blocks = Json.decodeFromString<List<Block>>(entry.blocksJson)
-            return entry.title to blocks
+            runCatching { Json.decodeFromString<List<Block>>(entry.blocksJson) }
+                .onSuccess { return entry.title to it }
+            // fall through to legacy migration on parse failure
         }
         // Legacy migration: convert HTML content + imageUris → blocks
         val textBlock = Block.Text(

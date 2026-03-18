@@ -17,5 +17,6 @@ data class DiaryEntry(
     val content: String,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
-    val imageUris: String = ""
+    val imageUris: String = "",
+    val blocksJson: String = ""
 )

@@ -1,0 +1,44 @@
+package dev.panthu.sololife.ui.diary.blocks
+
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
+import com.mohamedrejeb.richeditor.model.RichTextState
+import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
+import com.mohamedrejeb.richeditor.ui.material3.RichTextEditorDefaults
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TextBlock(
+    state: RichTextState,
+    modifier: Modifier = Modifier,
+    onFocusChanged: (Boolean) -> Unit = {}
+) {
+    RichTextEditor(
+        state = state,
+        modifier = modifier.onFocusChanged { onFocusChanged(it.isFocused) },
+        textStyle = LocalTextStyle.current.copy(
+            fontSize = MaterialTheme.typography.bodyLarge.fontSize,
+            color = MaterialTheme.colorScheme.onBackground,
+            lineHeight = MaterialTheme.typography.bodyLarge.lineHeight
+        ),
+        placeholder = {
+            Text(
+                text = "Write something…",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            )
+        },
+        colors = RichTextEditorDefaults.richTextEditorColors(
+            containerColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            cursorColor = MaterialTheme.colorScheme.primary
+        )
+    )
+}

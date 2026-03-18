@@ -273,8 +273,9 @@ private fun DiaryTimelineItem(
                 )
                 if (entry.content.isNotBlank()) {
                     Spacer(Modifier.height(8.dp))
-                    // Strip HTML tags for preview (content may be stored as HTML from RichTextEditor)
-                    val preview = entry.content.replace(Regex("<[^>]*>"), "")
+                    val preview = android.text.Html.fromHtml(
+                        entry.content, android.text.Html.FROM_HTML_MODE_COMPACT
+                    ).toString().trim()
                     Text(
                         text = preview,
                         style = MaterialTheme.typography.bodySmall,

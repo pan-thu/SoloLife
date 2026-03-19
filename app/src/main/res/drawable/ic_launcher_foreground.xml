@@ -1,30 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Foreground: stylised open journal
+    Viewport 108×108 — safe zone 18–90 (72dp centred)
+    All paths are white (or white with reduced alpha) so monochrome tinting works.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:pathData="M31,63.928c0,0 6.4,-11 12.1,-13.1c7.2,-2.6 26,-1.4 26,-1.4l38.1,38.1L107,108.928l-32,-1L31,63.928z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:endX="85.84757"
-                android:endY="92.4963"
-                android:startX="42.9492"
-                android:startY="49.59793"
-                android:type="linear">
-                <item
-                    android:color="#44000000"
-                    android:offset="0.0" />
-                <item
-                    android:color="#00000000"
-                    android:offset="1.0" />
-            </gradient>
-        </aapt:attr>
-    </path>
+
+    <!-- ── Left page ─────────────────────────────────────────────────── -->
+    <!-- Slightly curved top/bottom edges give the page a soft, natural feel -->
     <path
+        android:pathData="M54,34 C47,33 35,33 22,37 L22,74 C35,78 47,77 54,76 Z"
         android:fillColor="#FFFFFF"
-        android:fillType="nonZero"
-        android:pathData="M65.3,45.828l3.8,-6.6c0.2,-0.4 0.1,-0.9 -0.3,-1.1c-0.4,-0.2 -0.9,-0.1 -1.1,0.3l-3.9,6.7c-6.3,-2.8 -13.4,-2.8 -19.7,0l-3.9,-6.7c-0.2,-0.4 -0.7,-0.5 -1.1,-0.3C38.8,38.328 38.7,38.828 38.9,39.228l3.8,6.6C36.2,49.428 31.7,56.028 31,63.928h46C76.3,56.028 71.8,49.428 65.3,45.828zM43.4,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2c-0.3,-0.7 -0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C45.3,56.528 44.5,57.328 43.4,57.328L43.4,57.328zM64.6,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2s-0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C66.5,56.528 65.6,57.328 64.6,57.328L64.6,57.328z"
-        android:strokeWidth="1"
-        android:strokeColor="#00000000" />
+        android:fillAlpha="0.96"/>
+
+    <!-- ── Right page (slightly dimmer → depth illusion) ─────────────── -->
+    <path
+        android:pathData="M54,34 C61,33 73,33 86,37 L86,74 C73,78 61,77 54,76 Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.80"/>
+
+    <!-- ── Spine shadow strip ────────────────────────────────────────── -->
+    <!-- Very thin semi-transparent band between pages -->
+    <path
+        android:pathData="M52,34 C51,55 52,76 L56,76 C55,55 56,34 Z"
+        android:fillColor="#000000"
+        android:fillAlpha="0.10"/>
+
+    <!-- ── Spine centre crease line ──────────────────────────────────── -->
+    <path
+        android:pathData="M54,34 C53,55 54,76"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.2"
+        android:strokeAlpha="0.30"
+        android:strokeLineCap="round"/>
+
+    <!-- ── Left page: four writing lines ─────────────────────────────── -->
+    <path
+        android:pathData="M28,47 L50,47
+                          M28,56 L50,56
+                          M28,65 L50,65
+                          M28,72 L40,72"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.0"
+        android:strokeAlpha="0.48"
+        android:strokeLineCap="round"/>
+
+    <!-- ── Right page: four writing lines ────────────────────────────── -->
+    <path
+        android:pathData="M58,47 L80,47
+                          M58,56 L80,56
+                          M58,65 L80,65
+                          M68,72 L80,72"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.0"
+        android:strokeAlpha="0.48"
+        android:strokeLineCap="round"/>
+
+    <!-- ── Bookmark ribbon (top of right page) ───────────────────────── -->
+    <path
+        android:pathData="M77,34 L77,49 L80,45 L83,49 L83,34 Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.88"/>
+
+    <!-- ── 4-line sparkle star (upper-left, above the book) ──────────── -->
+    <!-- Suggests writing inspiration / personal journaling               -->
+    <path
+        android:pathData="M37,20 L37,32"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M31,26 L43,26"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"/>
+    <!-- Shorter diagonal arms -->
+    <path
+        android:pathData="M33,22 L41,30 M41,22 L33,30"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"/>
+
+    <!-- Small dot at sparkle centre for sharpness -->
+    <path
+        android:pathData="M37,26 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0 -3,0"
+        android:fillColor="#FFFFFF"/>
+
 </vector>

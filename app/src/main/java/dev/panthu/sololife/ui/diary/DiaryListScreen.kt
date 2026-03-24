@@ -115,6 +115,16 @@ fun DiaryListScreen(
                         }
                         Spacer(Modifier.width(4.dp))
                     }
+                    // Search icon — opens search bar
+                    IconButton(onClick = {
+                        searchActive = true
+                        calendarExpanded = false
+                    }) {
+                        Icon(
+                            imageVector = Icons.Rounded.Search,
+                            contentDescription = "Search entries"
+                        )
+                    }
                     // Calendar toggle
                     IconButton(onClick = {
                         calendarExpanded = !calendarExpanded

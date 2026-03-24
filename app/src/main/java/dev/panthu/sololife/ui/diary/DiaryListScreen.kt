@@ -53,6 +53,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Calendar
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -146,6 +147,10 @@ fun DiaryListScreen(
                 } else {
                     // ── SEARCH ACTIVE STATE ───────────────────────────────────────
                     val focusRequester = remember { FocusRequester() }
+                    LaunchedEffect(Unit) {
+                        delay(100)
+                        focusRequester.requestFocus()
+                    }
                     TopAppBar(
                         navigationIcon = {
                             IconButton(onClick = collapseSearch) {
@@ -167,17 +172,18 @@ fun DiaryListScreen(
                                     color = MaterialTheme.colorScheme.onSurface
                                 ),
                                 decorationBox = { innerTextField ->
-                                    if (state.query.isEmpty()) {
-                                        Text(
-                                            text = "Search entries…",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                    Box {
+                                        if (state.query.isEmpty()) {
+                                            Text(
+                                                text = "Search entries…",
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        innerTextField()
                                     }
-                                    innerTextField()
                                 }
                             )
-                            LaunchedEffect(Unit) { focusRequester.requestFocus() }
                         },
                         actions = {
                             if (state.query.isNotEmpty()) {

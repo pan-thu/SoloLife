@@ -25,7 +25,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.LocalFireDepartment
-import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -65,7 +65,7 @@ fun DiaryListScreen(
     val state by vm.uiState.collectAsState()
     val view = LocalView.current
 
-    var calendarExpanded by remember { mutableStateOf(false) }
+    var calendarExpanded by rememberSaveable { mutableStateOf(false) }
     var searchActive by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val collapseSearch = {
@@ -76,7 +76,7 @@ fun DiaryListScreen(
     BackHandler(enabled = searchActive) {
         collapseSearch()
     }
-    var pendingDate by remember { mutableStateOf<LocalDate?>(null) }
+    var pendingDate by rememberSaveable { mutableStateOf<LocalDate?>(null) }
 
     val primary = MaterialTheme.colorScheme.primary
     val tertiary = MaterialTheme.colorScheme.tertiary
@@ -155,7 +155,7 @@ fun DiaryListScreen(
                         navigationIcon = {
                             IconButton(onClick = collapseSearch) {
                                 Icon(
-                                    imageVector = Icons.Rounded.ArrowBack,
+                                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                                     contentDescription = "Close search"
                                 )
                             }

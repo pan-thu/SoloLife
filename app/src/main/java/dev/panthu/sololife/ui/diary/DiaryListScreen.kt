@@ -25,6 +25,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -83,60 +84,115 @@ fun DiaryListScreen(
     Scaffold(
         containerColor = Color.Transparent,
         topBar = {
-            TopAppBar(
-                title = { Text("Diary", style = MaterialTheme.typography.titleLarge) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent
-                ),
-                actions = {
-                    // Streak badge
-                    if (state.currentStreak > 0) {
-                        Surface(
-                            shape = RoundedCornerShape(50),
-                            color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
+            AnimatedContent(
+                targetState = searchActive,
+                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                label = "DiaryTopBarToggle"
+            ) { active ->
+                if (!active) {
+                    // ── NORMAL STATE ──────────────────────────────────────────────
+                    TopAppBar(
+                        title = { Text("Diary", style = MaterialTheme.typography.titleLarge) },
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+                        actions = {
+                            // Streak badge (existing)
+                            if (state.currentStreak > 0) {
+                                Surface(
+                                    shape = RoundedCornerShape(50),
+                                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.LocalFireDepartment,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.tertiary,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                        Text(
+                                            state.currentStreak.toString(),
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.tertiary
+                                        )
+                                    }
+                                }
+                                Spacer(Modifier.width(4.dp))
+                            }
+                            // Search icon
+                            IconButton(onClick = {
+                                searchActive = true
+                                calendarExpanded = false
+                            }) {
                                 Icon(
-                                    Icons.Rounded.LocalFireDepartment,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.tertiary,
-                                    modifier = Modifier.size(14.dp)
+                                    imageVector = Icons.Rounded.Search,
+                                    contentDescription = "Search entries"
                                 )
-                                Text(
-                                    state.currentStreak.toString(),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.tertiary
+                            }
+                            // Calendar toggle
+                            IconButton(onClick = {
+                                calendarExpanded = !calendarExpanded
+                                if (!calendarExpanded) pendingDate = null
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Rounded.CalendarMonth,
+                                    contentDescription = "Toggle calendar"
                                 )
                             }
                         }
-                        Spacer(Modifier.width(4.dp))
-                    }
-                    // Search icon — opens search bar
-                    IconButton(onClick = {
-                        searchActive = true
-                        calendarExpanded = false
-                    }) {
-                        Icon(
-                            imageVector = Icons.Rounded.Search,
-                            contentDescription = "Search entries"
-                        )
-                    }
-                    // Calendar toggle
-                    IconButton(onClick = {
-                        calendarExpanded = !calendarExpanded
-                        if (!calendarExpanded) pendingDate = null
-                    }) {
-                        Icon(
-                            imageVector = Icons.Rounded.CalendarMonth,
-                            contentDescription = "Toggle calendar"
-                        )
-                    }
+                    )
+                } else {
+                    // ── SEARCH ACTIVE STATE ───────────────────────────────────────
+                    val focusRequester = remember { FocusRequester() }
+                    TopAppBar(
+                        navigationIcon = {
+                            IconButton(onClick = collapseSearch) {
+                                Icon(
+                                    imageVector = Icons.Rounded.ArrowBack,
+                                    contentDescription = "Close search"
+                                )
+                            }
+                        },
+                        title = {
+                            BasicTextField(
+                                value = state.query,
+                                onValueChange = { vm.setQuery(it) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .focusRequester(focusRequester),
+                                singleLine = true,
+                                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                    color = MaterialTheme.colorScheme.onSurface
+                                ),
+                                decorationBox = { innerTextField ->
+                                    if (state.query.isEmpty()) {
+                                        Text(
+                                            text = "Search entries…",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    innerTextField()
+                                }
+                            )
+                            LaunchedEffect(Unit) { focusRequester.requestFocus() }
+                        },
+                        actions = {
+                            if (state.query.isNotEmpty()) {
+                                IconButton(onClick = { vm.setQuery("") }) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Close,
+                                        contentDescription = "Clear search"
+                                    )
+                                }
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                    )
                 }
-            )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(

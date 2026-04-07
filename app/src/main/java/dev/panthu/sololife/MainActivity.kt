@@ -72,8 +72,8 @@ private data class NavItem(
 private fun FloatingIslandNav(navController: NavHostController) {
     val navItems = listOf(
         NavItem(Screen.Home,     "Home",     Icons.Rounded.Home),
-        NavItem(Screen.Diary,    "Journal",  Icons.Rounded.AutoStories),
         NavItem(Screen.Expenses, "Wallet",   Icons.Rounded.AccountBalanceWallet),
+        NavItem(Screen.Diary,    "Journal",  Icons.Rounded.AutoStories),
         NavItem(Screen.Settings, "Settings", Icons.Rounded.Tune)
     )
 

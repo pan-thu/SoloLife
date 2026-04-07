@@ -36,6 +36,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester     // used in Task 3 search TextField
 import androidx.compose.ui.focus.focusRequester      // used in Task 3 search TextField
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
@@ -151,6 +154,16 @@ fun DiaryListScreen(
                         delay(100)
                         focusRequester.requestFocus()
                     }
+                    // TextFieldValue preserves cursor position across recompositions
+                    var textFieldValue by remember {
+                        mutableStateOf(TextFieldValue(state.query, TextRange(state.query.length)))
+                    }
+                    // Only sync from ViewModel when text changed externally (e.g. clear button)
+                    LaunchedEffect(state.query) {
+                        if (textFieldValue.text != state.query) {
+                            textFieldValue = TextFieldValue(state.query, TextRange(state.query.length))
+                        }
+                    }
                     TopAppBar(
                         navigationIcon = {
                             IconButton(onClick = collapseSearch) {
@@ -162,8 +175,11 @@ fun DiaryListScreen(
                         },
                         title = {
                             BasicTextField(
-                                value = state.query,
-                                onValueChange = { vm.setQuery(it) },
+                                value = textFieldValue,
+                                onValueChange = { newValue ->
+                                    textFieldValue = newValue
+                                    vm.setQuery(newValue.text)
+                                },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .focusRequester(focusRequester),
@@ -171,9 +187,10 @@ fun DiaryListScreen(
                                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                                     color = MaterialTheme.colorScheme.onSurface
                                 ),
+                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                                 decorationBox = { innerTextField ->
                                     Box {
-                                        if (state.query.isEmpty()) {
+                                        if (textFieldValue.text.isEmpty()) {
                                             Text(
                                                 text = "Search entries…",
                                                 style = MaterialTheme.typography.bodyLarge,
@@ -186,7 +203,7 @@ fun DiaryListScreen(
                             )
                         },
                         actions = {
-                            if (state.query.isNotEmpty()) {
+                            if (textFieldValue.text.isNotEmpty()) {
                                 IconButton(onClick = { vm.setQuery("") }) {
                                     Icon(
                                         imageVector = Icons.Rounded.Close,

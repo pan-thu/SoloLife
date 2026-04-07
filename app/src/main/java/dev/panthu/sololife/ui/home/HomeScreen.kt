@@ -37,6 +37,9 @@ import dev.panthu.sololife.util.info
 import dev.panthu.sololife.util.toExpenseCategory
 import kotlinx.coroutines.launch
 import kotlin.math.sin
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 @Composable
 fun HomeScreen(
@@ -195,9 +198,8 @@ private fun DiaryPage(
             enter = fadeIn(tween(500, delayMillis = 80)) +
                     slideInVertically(tween(500, delayMillis = 80)) { 60 }
         ) {
-            StreakHeroCard(
-                streak = state.diaryStreak,
-                weekDays = state.diaryWeekDays,
+            DiaryCalendarCard(
+                entryDates = state.currentMonthEntryDates,
                 primary = primary,
                 onNewEntry = onNewDiaryEntry
             )
@@ -223,26 +225,24 @@ private fun DiaryPage(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Streak hero card
+// Diary calendar card
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun StreakHeroCard(
-    streak: Int,
-    weekDays: List<Boolean>,
+private fun DiaryCalendarCard(
+    entryDates: Set<Long>,
     primary: Color,
     onNewEntry: () -> Unit
 ) {
+    val zone = ZoneId.systemDefault()
+    val today = LocalDate.now(zone)
+    val monthDate = today.withDayOfMonth(1)
+    val daysInMonth = monthDate.lengthOfMonth()
+    val startOffset = monthDate.dayOfWeek.value - 1  // Monday = 0
     val surface = MaterialTheme.colorScheme.surface
     val outline = MaterialTheme.colorScheme.outline
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
     val onPrimary = MaterialTheme.colorScheme.onPrimary
-
-    val animStreak by animateIntAsState(
-        targetValue = streak,
-        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow),
-        label = "streak"
-    )
 
     Box(
         modifier = Modifier
@@ -255,51 +255,107 @@ private fun StreakHeroCard(
                 Brush.linearGradient(listOf(primary.copy(0.35f), outline.copy(0.08f))),
                 RoundedCornerShape(28.dp)
             )
-            .padding(horizontal = 24.dp, vertical = 26.dp)
+            .padding(horizontal = 24.dp, vertical = 20.dp)
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-
-            Text(
-                "WRITING STREAK",
-                style = MaterialTheme.typography.labelSmall,
-                color = onSurfaceVariant,
-                letterSpacing = 2.sp
-            )
-
-            Spacer(Modifier.height(10.dp))
-
-            Text(
-                "$animStreak",
-                style = MaterialTheme.typography.displayMedium.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-2).sp
-                ),
-                color = if (streak > 0) primary else onSurfaceVariant
-            )
-            Text(
-                if (streak == 1) "day in a row" else "days in a row",
-                style = MaterialTheme.typography.bodySmall,
-                color = onSurfaceVariant
-            )
-            if (streak == 0) {
-                Spacer(Modifier.height(4.dp))
+        Column {
+            // Month title
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    "Write your first entry today!",
+                    text = today.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.getDefault())
+                        .uppercase() + " " + today.year,
                     style = MaterialTheme.typography.labelSmall,
-                    color = primary,
-                    fontWeight = FontWeight.SemiBold
+                    color = onSurfaceVariant,
+                    letterSpacing = 2.sp
                 )
             }
 
-            Spacer(Modifier.height(22.dp))
+            Spacer(Modifier.height(12.dp))
 
-            WeekDotsRow(weekDays = weekDays, primary = primary)
+            // Day-of-week headers
+            Row(modifier = Modifier.fillMaxWidth()) {
+                listOf("M", "T", "W", "T", "F", "S", "S").forEach { label ->
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+            }
 
-            Spacer(Modifier.height(22.dp))
+            Spacer(Modifier.height(8.dp))
+
+            // Calendar grid — 7 columns
+            val totalCells = startOffset + daysInMonth
+            val rows = (totalCells + 6) / 7
+            for (row in 0 until rows) {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    for (col in 0 until 7) {
+                        val cellIndex = row * 7 + col
+                        val dayNum = cellIndex - startOffset + 1
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .aspectRatio(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (dayNum in 1..daysInMonth) {
+                                val dayDate = monthDate.withDayOfMonth(dayNum)
+                                val dayMillis = dayDate.atStartOfDay(zone).toInstant().toEpochMilli()
+                                val hasEntry = entryDates.contains(dayMillis)
+                                val isToday = dayDate == today
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            when {
+                                                isToday -> primary.copy(alpha = 0.2f)
+                                                else    -> Color.Transparent
+                                            }
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = dayNum.toString(),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = when {
+                                                isToday  -> primary
+                                                hasEntry -> MaterialTheme.colorScheme.onSurface
+                                                else     -> onSurfaceVariant.copy(alpha = 0.4f)
+                                            },
+                                            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                        if (hasEntry) {
+                                            Spacer(Modifier.height(1.dp))
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(4.dp)
+                                                    .clip(CircleShape)
+                                                    .background(primary)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(18.dp))
 
             Button(
                 onClick = onNewEntry,
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = primary,
@@ -310,48 +366,6 @@ private fun StreakHeroCard(
                 Icon(Icons.Rounded.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text("New Entry", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-            }
-        }
-    }
-}
-
-@Composable
-private fun WeekDotsRow(weekDays: List<Boolean>, primary: Color) {
-    val dayLabels = listOf("M", "T", "W", "T", "F", "S", "S")
-    val onPrimary = MaterialTheme.colorScheme.onPrimary
-    val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        dayLabels.forEachIndexed { i, label ->
-            val hasEntry = weekDays.getOrElse(i) { false }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(if (hasEntry) primary else primary.copy(0.08f))
-                        .border(1.dp, if (hasEntry) Color.Transparent else primary.copy(0.20f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (hasEntry) {
-                        Icon(
-                            Icons.Rounded.Check,
-                            contentDescription = null,
-                            tint = onPrimary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-                Spacer(Modifier.height(5.dp))
-                Text(
-                    label,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (hasEntry) primary else onSurfaceVariant,
-                    fontWeight = if (hasEntry) FontWeight.Bold else FontWeight.Normal
-                )
             }
         }
     }

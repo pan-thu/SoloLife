@@ -26,7 +26,8 @@ data class HomeUiState(
     val recentExpenses: List<Expense> = emptyList(),
     val weekDailyTotals: List<DailyTotal> = emptyList(),
     val diaryStreak: Int = 0,
-    val diaryWeekDays: List<Boolean> = List(7) { false }
+    val diaryWeekDays: List<Boolean> = List(7) { false },
+    val currentMonthEntryDates: Set<Long> = emptySet()
 )
 
 class HomeViewModel(app: Application) : AndroidViewModel(app) {
@@ -66,6 +67,18 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                 val day = weekStartDate.plusDays(i.toLong())
                 allEntries.any { Instant.ofEpochMilli(it.date).atZone(zone).toLocalDate() == day }
             }
+            val currentMonthStart = LocalDate.now(zone).withDayOfMonth(1)
+            val currentMonthEnd = currentMonthStart.plusMonths(1)
+            val currentMonthEntryDates = allEntries
+                .filter {
+                    val ld = Instant.ofEpochMilli(it.date).atZone(zone).toLocalDate()
+                    ld >= currentMonthStart && ld < currentMonthEnd
+                }
+                .map { entry ->
+                    Instant.ofEpochMilli(entry.date).atZone(zone).toLocalDate()
+                        .atStartOfDay(zone).toInstant().toEpochMilli()
+                }
+                .toSet()
             HomeUiState(
                 todayTotal = today,
                 weekTotal = week,
@@ -73,7 +86,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                 latestDiaryEntry = allEntries.firstOrNull(),
                 recentExpenses = recent,
                 diaryStreak = DateUtils.currentStreak(allEntries.map { it.date }),
-                diaryWeekDays = weekDays
+                diaryWeekDays = weekDays,
+                currentMonthEntryDates = currentMonthEntryDates
             )
         },
         expenseRepo.dailyTotals(DateUtils.weekStart(), DateUtils.weekEnd())

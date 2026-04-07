@@ -6,14 +6,15 @@ import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import dev.panthu.sololife.MainActivity
 import dev.panthu.sololife.R
 import dev.panthu.sololife.SoloLifeApp
 import java.util.Calendar
+import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 
 class NotificationWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, params) {
@@ -47,6 +48,9 @@ class NotificationWorker(ctx: Context, params: WorkerParameters) : CoroutineWork
             }
         }
 
+        // Reschedule for next day at 21:00 — recalculates from current time to prevent drift
+        DiaryNotificationScheduler.schedule(applicationContext)
+
         return Result.success()
     }
 
@@ -60,19 +64,20 @@ object DiaryNotificationScheduler {
 
     fun schedule(context: Context) {
         val delay = millisUntil(hour = 21, minute = 0)
-        val req = PeriodicWorkRequestBuilder<NotificationWorker>(1, TimeUnit.DAYS)
+        val req = OneTimeWorkRequestBuilder<NotificationWorker>()
             .setInitialDelay(delay, TimeUnit.MILLISECONDS)
             .addTag(WORK_TAG)
             .build()
         WorkManager.getInstance(context)
-            .enqueueUniquePeriodicWork(WORK_TAG, ExistingPeriodicWorkPolicy.UPDATE, req)
+            .enqueueUniqueWork(WORK_TAG, ExistingWorkPolicy.REPLACE, req)
     }
 
     fun cancel(context: Context) = WorkManager.getInstance(context).cancelUniqueWork(WORK_TAG)
 
     private fun millisUntil(hour: Int, minute: Int): Long {
-        val now = Calendar.getInstance()
-        val target = Calendar.getInstance().apply {
+        val tz = TimeZone.getDefault()
+        val now = Calendar.getInstance(tz)
+        val target = Calendar.getInstance(tz).apply {
             set(Calendar.HOUR_OF_DAY, hour)
             set(Calendar.MINUTE, minute)
             set(Calendar.SECOND, 0)

@@ -23,6 +23,15 @@ class DiaryRepository(private val db: SoloLifeDatabase) {
 
     suspend fun delete(entry: DiaryEntry) = dao.delete(entry)
 
+    suspend fun softDelete(entry: DiaryEntry) = dao.softDelete(entry.id, System.currentTimeMillis())
+    suspend fun restore(entry: DiaryEntry) = dao.restore(entry.id)
+    fun getTrashed(): Flow<List<DiaryEntry>> = dao.getTrashed()
+    suspend fun permanentDelete(entry: DiaryEntry) = dao.delete(entry)
+    suspend fun purgeExpiredTrash() {
+        val cutoff = System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000
+        dao.purgeExpiredTrash(cutoff)
+    }
+
     suspend fun replaceAll(entries: List<DiaryEntry>) {
         db.withTransaction {
             dao.deleteAll()

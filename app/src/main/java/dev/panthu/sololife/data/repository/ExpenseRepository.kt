@@ -25,6 +25,15 @@ class ExpenseRepository(private val db: SoloLifeDatabase) {
 
     suspend fun delete(expense: Expense) = dao.delete(expense)
 
+    suspend fun softDelete(expense: Expense) = dao.softDelete(expense.id, System.currentTimeMillis())
+    suspend fun restore(expense: Expense) = dao.restore(expense.id)
+    fun getTrashed(): Flow<List<Expense>> = dao.getTrashed()
+    suspend fun permanentDelete(expense: Expense) = dao.delete(expense)
+    suspend fun purgeExpiredTrash() {
+        val cutoff = System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000
+        dao.purgeExpiredTrash(cutoff)
+    }
+
     suspend fun replaceAll(expenses: List<Expense>) {
         db.withTransaction {
             dao.deleteAll()

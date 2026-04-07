@@ -12,6 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.FileUpload
 import androidx.compose.material.icons.rounded.NotificationsActive
@@ -117,7 +118,10 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(vm: SettingsViewModel = viewModel()) {
+fun SettingsScreen(
+    onNavigateRecycleBin: () -> Unit = {},
+    vm: SettingsViewModel = viewModel()
+) {
     val context = LocalContext.current
     var showImportDialog by remember { mutableStateOf<Uri?>(null) }
     val notificationEnabled by vm.notificationEnabled.collectAsState()
@@ -282,6 +286,22 @@ fun SettingsScreen(vm: SettingsViewModel = viewModel()) {
                 title = "Import Backup",
                 subtitle = "Restore from a previously exported JSON file",
                 onClick = { importLauncher.launch(arrayOf("application/json", "*/*")) }
+            )
+
+            Spacer(Modifier.height(4.dp))
+
+            Text(
+                "Maintenance",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            SettingsActionCard(
+                icon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
+                title = "Recycle Bin",
+                subtitle = "Restore or permanently delete recently deleted items",
+                onClick = onNavigateRecycleBin
             )
 
             Spacer(Modifier.weight(1f))

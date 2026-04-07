@@ -87,7 +87,7 @@ class DiaryViewModel(app: Application) : AndroidViewModel(app) {
     fun setQuery(q: String) { _query.value = q }
 
     fun delete(entry: DiaryEntry) {
-        viewModelScope.launch { repo.delete(entry) }
+        viewModelScope.launch { repo.softDelete(entry) }
     }
 
     suspend fun getEntry(id: Long): DiaryEntry? = repo.getById(id)

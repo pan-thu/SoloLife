@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [DiaryEntry::class, Expense::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class SoloLifeDatabase : RoomDatabase() {
@@ -31,13 +31,20 @@ abstract class SoloLifeDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE diary_entries ADD COLUMN deletedAt INTEGER")
+                db.execSQL("ALTER TABLE expenses ADD COLUMN deletedAt INTEGER")
+            }
+        }
+
         fun getInstance(context: Context): SoloLifeDatabase =
             INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
                     context.applicationContext,
                     SoloLifeDatabase::class.java,
                     "sololife.db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build().also { INSTANCE = it }
             }
     }
 }

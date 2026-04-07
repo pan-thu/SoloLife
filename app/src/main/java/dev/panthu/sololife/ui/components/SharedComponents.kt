@@ -177,6 +177,7 @@ fun <T> SwipeActionsContainer(
     content: @Composable RowScope.() -> Unit
 ) {
     val view = LocalView.current
+    @Suppress("DEPRECATION")
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
             when (value) {
@@ -184,7 +185,8 @@ fun <T> SwipeActionsContainer(
                 SwipeToDismissBoxValue.EndToStart -> { view.hapticReject(); onDelete(); true }
                 else -> false
             }
-        }
+        },
+        positionalThreshold = { totalDistance -> totalDistance * 0.40f }
     )
     SwipeToDismissBox(
         state = dismissState,

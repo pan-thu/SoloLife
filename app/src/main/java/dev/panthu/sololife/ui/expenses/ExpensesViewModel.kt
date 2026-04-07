@@ -107,7 +107,7 @@ class ExpensesViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun delete(expense: Expense) {
-        viewModelScope.launch { repo.delete(expense) }
+        viewModelScope.launch { repo.softDelete(expense) }
     }
 
     val uiState: StateFlow<ExpensesUiState> = combine(

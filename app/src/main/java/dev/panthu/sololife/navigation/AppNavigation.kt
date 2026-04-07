@@ -13,6 +13,7 @@ import dev.panthu.sololife.ui.diary.BlockEditorScreen
 import dev.panthu.sololife.ui.diary.DiaryListScreen
 import dev.panthu.sololife.ui.expenses.ExpensesScreen
 import dev.panthu.sololife.ui.home.HomeScreen
+import dev.panthu.sololife.ui.settings.RecycleBinScreen
 import dev.panthu.sololife.ui.settings.SettingsScreen
 
 sealed class Screen(val route: String) {
@@ -24,6 +25,7 @@ sealed class Screen(val route: String) {
     data object DiaryDetail : Screen("diary/{entryId}") {
         fun route(id: Long) = "diary/$id"
     }
+    data object RecycleBin : Screen("recycle_bin")
 }
 
 // Top-level tabs get a subtle crossfade; sub-screens slide in from right
@@ -95,7 +97,16 @@ fun AppNavigation(navController: NavHostController) {
             ExpensesScreen()
         }
         composable(Screen.Settings.route) {
-            SettingsScreen()
+            SettingsScreen(onNavigateRecycleBin = { navController.navigate(Screen.RecycleBin.route) })
+        }
+        composable(
+            route = Screen.RecycleBin.route,
+            enterTransition = { subEnter },
+            exitTransition = { subExit },
+            popEnterTransition = { subPopEnter },
+            popExitTransition = { subPopExit }
+        ) {
+            RecycleBinScreen(onBack = { navController.popBackStack() })
         }
     }
 }

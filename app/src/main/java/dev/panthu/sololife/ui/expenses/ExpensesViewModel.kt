@@ -132,11 +132,8 @@ class ExpensesViewModel(app: Application) : AndroidViewModel(app) {
         val filtered = if (filterCat == null) dateFilteredExpenses
                        else dateFilteredExpenses.filter { it.category == filterCat.name }
 
-        // Step 3: displayTotal (category-unfiltered; breadcrumb total)
-        val displayTotal = when (dateFilter) {
-            is ExpenseDateFilter.None -> 0.0
-            else -> dateFilteredExpenses.sumOf { it.amount }
-        }
+        // Step 3: displayTotal — always reflects current filtered result (date + category)
+        val displayTotal = filtered.sumOf { it.amount }
 
         // Step 4: weekSummaries (only when drilling into a month)
         val weekSummaries = if (dateFilter is ExpenseDateFilter.Month) {

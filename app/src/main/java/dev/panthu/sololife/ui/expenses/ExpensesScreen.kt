@@ -225,18 +225,35 @@ private fun BreadcrumbStrip(
     when (dateFilter) {
         is ExpenseDateFilter.None -> {
             val currentMonth = if (selectedYear == today.year) today.monthValue else -1
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(12) { idx ->
-                    val monthNum = idx + 1
-                    val monthName = Month.of(monthNum).getDisplayName(TextStyle.SHORT, Locale.getDefault())
-                    BreadcrumbPill(
-                        label = monthName,
-                        selected = monthNum == currentMonth,
-                        onClick = { onMonthSelected(selectedYear, monthNum) }
-                    )
+            Column {
+                if (displayTotal > 0.0) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Total: ฿${String.format("%,.0f", displayTotal)}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(12) { idx ->
+                        val monthNum = idx + 1
+                        val monthName = Month.of(monthNum).getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                        BreadcrumbPill(
+                            label = monthName,
+                            selected = monthNum == currentMonth,
+                            onClick = { onMonthSelected(selectedYear, monthNum) }
+                        )
+                    }
                 }
             }
         }

@@ -3,6 +3,7 @@ package dev.panthu.sololife.navigation
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -46,10 +47,22 @@ fun AppNavigation(navController: NavHostController) {
     ) {
         composable(Screen.Home.route) {
             HomeScreen(
-                onNavigateDiary    = { navController.navigate(Screen.Diary.route) },
-                onNavigateExpenses = { navController.navigate(Screen.Expenses.route) },
-                onNewDiaryEntry    = { navController.navigate(Screen.DiaryNew.route) },
-                onOpenDiaryEntry   = { id -> navController.navigate(Screen.DiaryDetail.route(id)) }
+                onNavigateDiary = {
+                    navController.navigate(Screen.Diary.route) {
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateExpenses = {
+                    navController.navigate(Screen.Expenses.route) {
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNewDiaryEntry  = { navController.navigate(Screen.DiaryNew.route) },
+                onOpenDiaryEntry = { id -> navController.navigate(Screen.DiaryDetail.route(id)) }
             )
         }
         composable(Screen.Diary.route) {

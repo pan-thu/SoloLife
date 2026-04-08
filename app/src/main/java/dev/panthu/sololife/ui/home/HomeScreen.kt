@@ -358,8 +358,8 @@ private fun DiaryCalendarCard(
                                 } else 1f
 
                                 val textColor = when {
-                                    isToday  -> onPrimary
-                                    hasEntry -> onPrimary
+                                    isToday  -> primary
+                                    hasEntry -> primary.copy(alpha = 0.85f)
                                     isFuture -> onSurfaceVariant.copy(alpha = 0.22f)
                                     else     -> onSurfaceVariant.copy(alpha = 0.60f)
                                 }
@@ -373,10 +373,14 @@ private fun DiaryCalendarCard(
                                             when {
                                                 isToday -> Modifier.background(
                                                     Brush.linearGradient(
-                                                        listOf(primary, tertiary.copy(alpha = 0.80f))
+                                                        listOf(primary.copy(alpha = 0.30f), tertiary.copy(alpha = 0.20f))
                                                     )
                                                 )
-                                                hasEntry -> Modifier.background(primary.copy(alpha = 0.75f))
+                                                hasEntry -> Modifier.background(
+                                                    Brush.linearGradient(
+                                                        listOf(primary.copy(alpha = 0.22f), tertiary.copy(alpha = 0.12f))
+                                                    )
+                                                )
                                                 else -> Modifier
                                             }
                                         ),
@@ -387,8 +391,8 @@ private fun DiaryCalendarCard(
                                         style = MaterialTheme.typography.labelSmall,
                                         color = textColor,
                                         fontWeight = when {
-                                            isToday  -> FontWeight.ExtraBold
-                                            hasEntry -> FontWeight.SemiBold
+                                            isToday  -> FontWeight.Bold
+                                            hasEntry -> FontWeight.Medium
                                             else     -> FontWeight.Normal
                                         }
                                     )

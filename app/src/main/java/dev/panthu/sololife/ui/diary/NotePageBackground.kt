@@ -7,11 +7,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun NotePageBackground(modifier: Modifier = Modifier) {
     val density = LocalDensity.current
-    val lineSpacingPx = with(density) { 28.dp.toPx() }
+    // Match the body text line height (30sp) so ruled lines sit under each text line
+    val lineSpacingPx = with(density) { 30.sp.toPx() }
     val lineColor = Color(0xFFB8D4E8)
 
     // Pre-compute stroke width outside DrawScope (toPx() needs Density receiver)

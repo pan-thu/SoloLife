@@ -52,7 +52,7 @@ fun BlockEditorScreen(
     var selectedBlockId by remember { mutableStateOf<String?>(null) }
     var showInsertMenu by remember { mutableStateOf(false) }
     var pendingDeletePaths by remember { mutableStateOf<List<String>>(emptyList()) }
-    var date by remember { mutableStateOf(System.currentTimeMillis()) }
+    var date by remember { mutableStateOf<Long?>(null) }
     var loaded by remember { mutableStateOf(entryId == null) }
     var showDatePicker by remember { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
@@ -65,6 +65,7 @@ fun BlockEditorScreen(
             val result = vm.getEntryAsBlocks(entryId)
             if (result == null) { onBack(); return@LaunchedEffect }
             val (loadedTitle, loadedBlocks) = result
+            date = vm.getEntry(entryId)?.date
             title = loadedTitle
             loadedBlocks.forEach { block ->
                 if (block is Block.Text) {
@@ -136,7 +137,7 @@ fun BlockEditorScreen(
         }
         scope.launch {
             try {
-                vm.saveBlocks(entryId, title.trim(), updatedBlocks, date)
+                vm.saveBlocks(entryId, title.trim(), updatedBlocks, date ?: System.currentTimeMillis())
                 pendingDeletePaths.forEach { deleteImage(it) }
                 onBack()
             } catch (e: Exception) {
@@ -228,7 +229,7 @@ fun BlockEditorScreen(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = DateUtils.formatShort(date),
+                            text = if (date != null) DateUtils.formatShort(date!!) else "Set date",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -265,6 +266,7 @@ fun BlockEditorScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .imePadding()
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
@@ -377,7 +379,7 @@ fun BlockEditorScreen(
 
     // Date picker dialog
     if (showDatePicker) {
-        val pickerState = rememberDatePickerState(initialSelectedDateMillis = date)
+        val pickerState = rememberDatePickerState(initialSelectedDateMillis = date ?: System.currentTimeMillis())
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {

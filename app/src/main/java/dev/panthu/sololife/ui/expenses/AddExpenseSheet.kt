@@ -1,13 +1,16 @@
 package dev.panthu.sololife.ui.expenses
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Close
@@ -19,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -28,7 +32,7 @@ import dev.panthu.sololife.util.CategoryInfo
 import dev.panthu.sololife.util.DateUtils
 import dev.panthu.sololife.util.info
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddExpenseSheet(
     onDismiss: () -> Unit,
@@ -49,6 +53,13 @@ fun AddExpenseSheet(
     }
 
     val isValid = amountText.toDoubleOrNull()?.let { it > 0.0 } == true
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val isImeVisible = WindowInsets.isImeVisible
+
+    // When the keyboard is open, intercept back to dismiss keyboard only (not the sheet)
+    BackHandler(enabled = isImeVisible) {
+        keyboardController?.hide()
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -60,6 +71,8 @@ fun AddExpenseSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally

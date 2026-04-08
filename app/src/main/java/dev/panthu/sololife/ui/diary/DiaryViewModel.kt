@@ -21,7 +21,9 @@ data class DiaryListUiState(
     val isLoaded: Boolean = false,
     val calendarEntryDates: Set<Long> = emptySet(),
     val currentStreak: Int = 0,
-    val selectedDate: java.time.LocalDate? = null
+    val selectedDate: java.time.LocalDate? = null,
+    val calendarMonth: java.time.LocalDate =
+        java.time.LocalDate.now(java.time.ZoneId.systemDefault()).withDayOfMonth(1)
 )
 
 class DiaryViewModel(app: Application) : AndroidViewModel(app) {
@@ -31,27 +33,13 @@ class DiaryViewModel(app: Application) : AndroidViewModel(app) {
     val query: StateFlow<String> = _query.asStateFlow()
 
     private val _selectedDate = MutableStateFlow<java.time.LocalDate?>(null)
+    private val _calendarMonth = MutableStateFlow(
+        java.time.LocalDate.now(java.time.ZoneId.systemDefault()).withDayOfMonth(1)
+    )
 
-    fun setSelectedDate(date: java.time.LocalDate) {
-        _selectedDate.value = date
-    }
-
-    fun clearDateFilter() {
-        _selectedDate.value = null
-    }
-
-    private fun currentMonthStart(): Long {
-        val zone = java.time.ZoneId.systemDefault()
-        val first = java.time.LocalDate.now(zone).withDayOfMonth(1)
-        return first.atStartOfDay(zone).toInstant().toEpochMilli()
-    }
-
-    private fun currentMonthEnd(): Long {
-        val zone = java.time.ZoneId.systemDefault()
-        val today = java.time.LocalDate.now(zone)
-        val last = today.withDayOfMonth(today.lengthOfMonth())
-        return last.atTime(23, 59, 59).atZone(zone).toInstant().toEpochMilli()
-    }
+    fun setSelectedDate(date: java.time.LocalDate) { _selectedDate.value = date }
+    fun clearDateFilter() { _selectedDate.value = null }
+    fun setCalendarMonth(month: java.time.LocalDate) { _calendarMonth.value = month }
 
     private val _allEntries = repo.getAll()
         .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
@@ -61,8 +49,11 @@ class DiaryViewModel(app: Application) : AndroidViewModel(app) {
         _query.flatMapLatest { q ->
             if (q.isBlank()) _allEntries else repo.search(q)
         },
-        run {
-            repo.getEntryDatesInRange(currentMonthStart(), currentMonthEnd())
+        _calendarMonth.flatMapLatest { month ->
+            val zone = java.time.ZoneId.systemDefault()
+            val start = month.atStartOfDay(zone).toInstant().toEpochMilli()
+            val end = month.plusMonths(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1
+            repo.getEntryDatesInRange(start, end)
         },
         _allEntries,
         _selectedDate
@@ -80,7 +71,8 @@ class DiaryViewModel(app: Application) : AndroidViewModel(app) {
             isLoaded = true,
             calendarEntryDates = entryDaySet,
             currentStreak = streak,
-            selectedDate = selectedDate
+            selectedDate = selectedDate,
+            calendarMonth = _calendarMonth.value
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DiaryListUiState())
 

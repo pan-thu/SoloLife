@@ -21,6 +21,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.EditNote
@@ -265,10 +267,10 @@ fun DiaryListScreen(
                 // Collapsible calendar panel
                 AnimatedVisibility(visible = calendarExpanded) {
                     val zone = ZoneId.systemDefault()
-                    val monthStart = LocalDate.now(zone).withDayOfMonth(1)
+                    val calendarMonthStart = state.calendarMonth
                         .atStartOfDay(zone).toInstant().toEpochMilli()
                     DiaryCalendarView(
-                        currentMonthStart = monthStart,
+                        currentMonthStart = calendarMonthStart,
                         entryDates = state.calendarEntryDates,
                         selectedDate = state.selectedDate,
                         pendingDate = pendingDate,
@@ -277,6 +279,14 @@ fun DiaryListScreen(
                             pendingDate?.let { vm.setSelectedDate(it) }
                             pendingDate = null
                             calendarExpanded = false
+                        },
+                        onPrevMonth = {
+                            vm.setCalendarMonth(state.calendarMonth.minusMonths(1))
+                            pendingDate = null
+                        },
+                        onNextMonth = {
+                            vm.setCalendarMonth(state.calendarMonth.plusMonths(1))
+                            pendingDate = null
                         }
                     )
                 }
@@ -427,7 +437,9 @@ private fun DiaryCalendarView(
     selectedDate: LocalDate? = null,
     pendingDate: LocalDate? = null,
     onDayClick: (LocalDate) -> Unit,
-    onConfirm: (() -> Unit)? = null
+    onConfirm: (() -> Unit)? = null,
+    onPrevMonth: (() -> Unit)? = null,
+    onNextMonth: (() -> Unit)? = null
 ) {
     val zone = ZoneId.systemDefault()
     val monthDate = Instant.ofEpochMilli(currentMonthStart).atZone(zone).toLocalDate()
@@ -438,12 +450,44 @@ private fun DiaryCalendarView(
             .fillMaxWidth()
             .padding(horizontal = 24.dp)
     ) {
-        // Month title
-        Text(
-            text = DateUtils.formatMonth(currentMonthStart),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
+        // Month title with optional navigation
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (onPrevMonth != null) {
+                IconButton(onClick = onPrevMonth, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        Icons.Rounded.ChevronLeft,
+                        contentDescription = "Previous month",
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            } else {
+                Spacer(Modifier.size(32.dp))
+            }
+            Text(
+                text = DateUtils.formatMonth(currentMonthStart),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            if (onNextMonth != null) {
+                IconButton(onClick = onNextMonth, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        Icons.Rounded.ChevronRight,
+                        contentDescription = "Next month",
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            } else {
+                Spacer(Modifier.size(32.dp))
+            }
+        }
 
         // Day of week headers
         Row(modifier = Modifier.fillMaxWidth()) {

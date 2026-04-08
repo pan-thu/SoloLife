@@ -200,7 +200,7 @@ private fun DiaryPage(
                     slideInVertically(tween(500, delayMillis = 80)) { 60 }
         ) {
             DiaryCalendarCard(
-                entryDates = state.currentMonthEntryDates,
+                allEntryDates = state.allEntryDates,
                 streak = state.diaryStreak,
                 primary = primary,
                 tertiary = tertiary,
@@ -233,7 +233,7 @@ private fun DiaryPage(
 
 @Composable
 private fun DiaryCalendarCard(
-    entryDates: Set<Long>,
+    allEntryDates: Set<Long>,
     streak: Int,
     primary: Color,
     tertiary: Color,
@@ -241,10 +241,22 @@ private fun DiaryCalendarCard(
 ) {
     val zone = ZoneId.systemDefault()
     val today = LocalDate.now(zone)
-    val monthDate = today.withDayOfMonth(1)
+    var viewedMonth by remember { mutableStateOf(today.withDayOfMonth(1)) }
+
+    // Entry dates for the currently viewed month only
+    val entryDates = remember(allEntryDates, viewedMonth) {
+        allEntryDates.filter { millis ->
+            val ld = Instant.ofEpochMilli(millis).atZone(zone).toLocalDate()
+            ld.year == viewedMonth.year && ld.monthValue == viewedMonth.monthValue
+        }.toSet()
+    }
+
+    val monthDate = viewedMonth
     val daysInMonth = monthDate.lengthOfMonth()
-    val startOffset = monthDate.dayOfWeek.value - 1  // Monday = 0
-    val todayColIndex = today.dayOfWeek.value - 1    // 0 = Mon … 6 = Sun
+    val startOffset = monthDate.dayOfWeek.value - 1
+    // Only highlight today's column when viewing the current month
+    val todayColIndex = if (viewedMonth.year == today.year && viewedMonth.month == today.month)
+        today.dayOfWeek.value - 1 else -1
     val surface = MaterialTheme.colorScheme.surface
     val outline = MaterialTheme.colorScheme.outline
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
@@ -275,14 +287,14 @@ private fun DiaryCalendarCard(
         )
 
         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
-            // Month / year header — prominent
+            // Month / year header with prev/next navigation
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = today.month
+                    text = viewedMonth.month
                         .getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.getDefault())
                         .uppercase(),
                     style = MaterialTheme.typography.titleLarge.copy(
@@ -291,12 +303,37 @@ private fun DiaryCalendarCard(
                     ),
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                Text(
-                    text = today.year.toString(),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = onSurfaceVariant,
-                    letterSpacing = 2.sp
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = viewedMonth.year.toString(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = onSurfaceVariant,
+                        letterSpacing = 2.sp
+                    )
+                    Spacer(Modifier.width(2.dp))
+                    IconButton(
+                        onClick = { viewedMonth = viewedMonth.minusMonths(1) },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.ChevronLeft,
+                            contentDescription = "Previous month",
+                            tint = primary.copy(alpha = 0.7f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = { viewedMonth = viewedMonth.plusMonths(1) },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.ChevronRight,
+                            contentDescription = "Next month",
+                            tint = primary.copy(alpha = 0.7f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.height(16.dp))
@@ -308,8 +345,8 @@ private fun DiaryCalendarCard(
                         Text(
                             text = label,
                             style = MaterialTheme.typography.labelSmall,
-                            fontWeight = if (index == todayColIndex) FontWeight.Bold else FontWeight.Normal,
-                            color = if (index == todayColIndex) primary
+                            fontWeight = if (index == todayColIndex && todayColIndex >= 0) FontWeight.Bold else FontWeight.Normal,
+                            color = if (index == todayColIndex && todayColIndex >= 0) primary
                                     else onSurfaceVariant.copy(alpha = 0.45f)
                         )
                     }

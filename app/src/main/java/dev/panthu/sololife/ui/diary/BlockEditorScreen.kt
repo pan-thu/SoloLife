@@ -333,34 +333,35 @@ fun BlockEditorScreen(
                             pendingDeletePaths = pendingDeletePaths + paths
                             blocks = blocks.filter { it.id != block.id }
                         },
-                        onDeleteBlock = {
-                            when (block) {
-                                is Block.Text -> richTextStates.remove(block.id)
-                                is Block.Image -> pendingDeletePaths = pendingDeletePaths + block.paths
-                                else -> Unit
-                            }
-                            blocks = blocks.filter { it.id != block.id }
-                        },
                         onChecklistChanged = { newItems ->
                             blocks = blocks.map {
                                 if (it.id == block.id) (it as Block.Checklist).copy(items = newItems) else it
                             }
-                        },
-                        isFirst = index == 0,
-                        isLast = index == blocks.lastIndex,
-                        onMoveUp = { moveBlockUp(block.id) },
-                        onMoveDown = { moveBlockDown(block.id) }
+                        }
                     )
                 }
             }
 
-            // Formatting bubble — shown when a text block is selected
+            // Action bar — shown when any block is selected
             val selectedBlock = blocks.find { it.id == selectedBlockId }
-            val focusedState = if (selectedBlock is Block.Text) richTextStates[selectedBlockId] else null
-            if (focusedState != null) {
+            if (selectedBlock != null) {
+                val richState = if (selectedBlock is Block.Text) richTextStates[selectedBlock.id] else null
+                val selectedIndex = blocks.indexOfFirst { it.id == selectedBlock.id }
                 FormattingBubble(
-                    state = focusedState,
-                    onDismiss = { selectedBlockId = null },
+                    state = richState,
+                    isFirst = selectedIndex <= 0,
+                    isLast = selectedIndex >= blocks.lastIndex,
+                    onMoveUp = { moveBlockUp(selectedBlock.id) },
+                    onMoveDown = { moveBlockDown(selectedBlock.id) },
+                    onDelete = {
+                        when (selectedBlock) {
+                            is Block.Text -> richTextStates.remove(selectedBlock.id)
+                            is Block.Image -> pendingDeletePaths = pendingDeletePaths + selectedBlock.paths
+                            else -> Unit
+                        }
+                        blocks = blocks.filter { it.id != selectedBlock.id }
+                        selectedBlockId = null
+                    },
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 16.dp)
@@ -408,12 +409,7 @@ private fun BlockRow(
     onSelect: () -> Unit,
     onFocusChange: (String, Boolean) -> Unit,
     onDeleteImageBlock: (List<String>) -> Unit,
-    onDeleteBlock: () -> Unit,
     onChecklistChanged: (List<CheckItem>) -> Unit,
-    isFirst: Boolean,
-    isLast: Boolean,
-    onMoveUp: () -> Unit,
-    onMoveDown: () -> Unit
 ) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         // Block content
@@ -475,48 +471,6 @@ private fun BlockRow(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
-                    )
-                }
-            }
-        }
-        // Reorder + delete column — only shown when this block is selected
-        if (isSelected) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                IconButton(
-                    onClick = onMoveUp,
-                    enabled = !isFirst,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        Icons.Rounded.KeyboardArrowUp,
-                        contentDescription = "Move block up",
-                        modifier = Modifier.size(18.dp),
-                        tint = if (!isFirst) MaterialTheme.colorScheme.onSurfaceVariant
-                               else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                    )
-                }
-                IconButton(
-                    onClick = onMoveDown,
-                    enabled = !isLast,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        Icons.Rounded.KeyboardArrowDown,
-                        contentDescription = "Move block down",
-                        modifier = Modifier.size(18.dp),
-                        tint = if (!isLast) MaterialTheme.colorScheme.onSurfaceVariant
-                               else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                    )
-                }
-                IconButton(
-                    onClick = onDeleteBlock,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        Icons.Rounded.DeleteOutline,
-                        contentDescription = "Delete block",
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
                     )
                 }
             }

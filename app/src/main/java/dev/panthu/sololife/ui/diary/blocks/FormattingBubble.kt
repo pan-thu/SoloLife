@@ -3,6 +3,7 @@ package dev.panthu.sololife.ui.diary.blocks
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.FormatListBulleted
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -15,39 +16,96 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.mohamedrejeb.richeditor.model.RichTextState
 
+/**
+ * Bottom action bar shown when any block is selected.
+ *
+ * [state] — non-null for text blocks: shows B/I/U/bullet formatting buttons.
+ * [isFirst]/[isLast] — controls enabled state of the move-up/move-down buttons.
+ */
 @Composable
 fun FormattingBubble(
-    state: RichTextState,
-    onDismiss: () -> Unit,
+    state: RichTextState?,
+    isFirst: Boolean,
+    isLast: Boolean,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+    onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isBold = state.currentSpanStyle.fontWeight == FontWeight.Bold
-    val isItalic = state.currentSpanStyle.fontStyle == FontStyle.Italic
-    val isUnderline = state.currentSpanStyle.textDecoration
-        ?.contains(TextDecoration.Underline) == true
-    val isBullet = state.isUnorderedList
-
     Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = MaterialTheme.colorScheme.inverseSurface,
-        tonalElevation = 4.dp,
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 2.dp,
+        shadowElevation = 4.dp,
         modifier = modifier
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 4.dp)
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
         ) {
-            BubbleButton(icon = Icons.Rounded.FormatBold, active = isBold, contentDescription = "Bold") {
-                state.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold))
+            // Formatting buttons — only for text blocks
+            if (state != null) {
+                val isBold = state.currentSpanStyle.fontWeight == FontWeight.Bold
+                val isItalic = state.currentSpanStyle.fontStyle == FontStyle.Italic
+                val isUnderline = state.currentSpanStyle.textDecoration
+                    ?.contains(TextDecoration.Underline) == true
+                val isBullet = state.isUnorderedList
+
+                BubbleButton(Icons.Rounded.FormatBold, isBold, "Bold") {
+                    state.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold))
+                }
+                BubbleButton(Icons.Rounded.FormatItalic, isItalic, "Italic") {
+                    state.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic))
+                }
+                BubbleButton(Icons.Rounded.FormatUnderlined, isUnderline, "Underline") {
+                    state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.Underline))
+                }
+                BubbleButton(Icons.AutoMirrored.Rounded.FormatListBulleted, isBullet, "Bullet list") {
+                    state.toggleUnorderedList()
+                }
+
+                VerticalDivider(
+                    modifier = Modifier
+                        .height(20.dp)
+                        .padding(horizontal = 6.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
             }
-            BubbleButton(icon = Icons.Rounded.FormatItalic, active = isItalic, contentDescription = "Italic") {
-                state.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic))
+
+            // Move up / down / delete — always shown for selected block
+            IconButton(
+                onClick = onMoveUp,
+                enabled = !isFirst,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    Icons.Rounded.KeyboardArrowUp,
+                    contentDescription = "Move block up",
+                    modifier = Modifier.size(18.dp),
+                    tint = if (!isFirst) MaterialTheme.colorScheme.onSurfaceVariant
+                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                )
             }
-            BubbleButton(icon = Icons.Rounded.FormatUnderlined, active = isUnderline, contentDescription = "Underline") {
-                state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.Underline))
+            IconButton(
+                onClick = onMoveDown,
+                enabled = !isLast,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    Icons.Rounded.KeyboardArrowDown,
+                    contentDescription = "Move block down",
+                    modifier = Modifier.size(18.dp),
+                    tint = if (!isLast) MaterialTheme.colorScheme.onSurfaceVariant
+                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                )
             }
-            BubbleButton(icon = Icons.Rounded.FormatListBulleted, active = isBullet, contentDescription = "Bullet list") {
-                state.toggleUnorderedList()
+            IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    Icons.Rounded.DeleteOutline,
+                    contentDescription = "Delete block",
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                )
             }
         }
     }
@@ -64,10 +122,8 @@ private fun BubbleButton(
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = if (active)
-                MaterialTheme.colorScheme.inverseOnSurface
-            else
-                MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = 0.6f),
+            tint = if (active) MaterialTheme.colorScheme.primary
+                   else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(18.dp)
         )
     }

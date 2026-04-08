@@ -243,11 +243,11 @@ private fun DiaryCalendarCard(
     val monthDate = today.withDayOfMonth(1)
     val daysInMonth = monthDate.lengthOfMonth()
     val startOffset = monthDate.dayOfWeek.value - 1  // Monday = 0
+    val todayColIndex = today.dayOfWeek.value - 1    // 0 = Mon … 6 = Sun
     val surface = MaterialTheme.colorScheme.surface
     val outline = MaterialTheme.colorScheme.outline
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
     val onPrimary = MaterialTheme.colorScheme.onPrimary
-    val entryCount = entryDates.size
 
     Box(
         modifier = Modifier
@@ -260,51 +260,56 @@ private fun DiaryCalendarCard(
                 Brush.linearGradient(listOf(primary.copy(0.35f), outline.copy(0.08f))),
                 RoundedCornerShape(28.dp)
             )
-            .padding(horizontal = 20.dp, vertical = 20.dp)
     ) {
-        Column {
-            // Month title
-            Text(
-                text = today.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.getDefault())
-                    .uppercase() + "  " + today.year,
-                style = MaterialTheme.typography.labelSmall,
-                color = onSurfaceVariant,
-                letterSpacing = 2.sp
-            )
+        // Subtle top-fade tint matching primary
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(primary.copy(alpha = 0.07f), Color.Transparent)
+                    )
+                )
+        )
 
-            Spacer(Modifier.height(14.dp))
-
-            // Stats bento row
+        Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
+            // Month / year header — prominent
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
             ) {
-                DiaryMiniStatCard(
-                    label = "ENTRIES",
-                    value = entryCount,
-                    sub = "this month",
-                    accentColor = primary,
-                    modifier = Modifier.weight(1f)
+                Text(
+                    text = today.month
+                        .getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.getDefault())
+                        .uppercase(),
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-                DiaryMiniStatCard(
-                    label = "STREAK",
-                    value = streak,
-                    sub = if (streak == 1) "day in a row" else "days in a row",
-                    accentColor = tertiary,
-                    modifier = Modifier.weight(1f)
+                Text(
+                    text = today.year.toString(),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = onSurfaceVariant,
+                    letterSpacing = 2.sp
                 )
             }
 
             Spacer(Modifier.height(16.dp))
 
-            // Day-of-week headers
+            // Day-of-week headers — today's column highlighted in primary
             Row(modifier = Modifier.fillMaxWidth()) {
-                listOf("M", "T", "W", "T", "F", "S", "S").forEach { label ->
+                listOf("M", "T", "W", "T", "F", "S", "S").forEachIndexed { index, label ->
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         Text(
                             text = label,
                             style = MaterialTheme.typography.labelSmall,
-                            color = onSurfaceVariant.copy(alpha = 0.5f)
+                            fontWeight = if (index == todayColIndex) FontWeight.Bold else FontWeight.Normal,
+                            color = if (index == todayColIndex) primary
+                                    else onSurfaceVariant.copy(alpha = 0.45f)
                         )
                     }
                 }
@@ -333,23 +338,30 @@ private fun DiaryCalendarCard(
                                 val isToday = dayDate == today
                                 val isFuture = dayDate.isAfter(today)
 
-                                val circleBg = when {
-                                    isToday  -> primary
-                                    hasEntry -> primary.copy(alpha = 0.18f)
-                                    else     -> Color.Transparent
-                                }
                                 val textColor = when {
                                     isToday  -> onPrimary
-                                    hasEntry -> primary
-                                    isFuture -> onSurfaceVariant.copy(alpha = 0.25f)
-                                    else     -> onSurfaceVariant.copy(alpha = 0.55f)
+                                    hasEntry -> onPrimary
+                                    isFuture -> onSurfaceVariant.copy(alpha = 0.22f)
+                                    else     -> onSurfaceVariant.copy(alpha = 0.60f)
                                 }
 
                                 Box(
                                     modifier = Modifier
                                         .size(30.dp)
                                         .clip(CircleShape)
-                                        .background(circleBg),
+                                        .then(
+                                            when {
+                                                // Today: primary → tertiary gradient
+                                                isToday -> Modifier.background(
+                                                    Brush.linearGradient(
+                                                        listOf(primary, tertiary.copy(alpha = 0.80f))
+                                                    )
+                                                )
+                                                // Entry day: solid primary
+                                                hasEntry -> Modifier.background(primary.copy(alpha = 0.75f))
+                                                else -> Modifier
+                                            }
+                                        ),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
@@ -369,7 +381,21 @@ private fun DiaryCalendarCard(
                 }
             }
 
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(16.dp))
+
+            // Gradient divider
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(Color.Transparent, primary.copy(alpha = 0.25f), Color.Transparent)
+                        )
+                    )
+            )
+
+            Spacer(Modifier.height(14.dp))
 
             Button(
                 onClick = onNewEntry,
@@ -387,59 +413,6 @@ private fun DiaryCalendarCard(
                 Spacer(Modifier.width(8.dp))
                 Text("New Entry", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
             }
-        }
-    }
-}
-
-@Composable
-private fun DiaryMiniStatCard(
-    label: String,
-    value: Int,
-    sub: String,
-    accentColor: Color,
-    modifier: Modifier = Modifier
-) {
-    val outline = MaterialTheme.colorScheme.outline
-    val animValue by animateFloatAsState(
-        targetValue = value.toFloat(),
-        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow),
-        label = "${label}Anim"
-    )
-
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
-            .border(
-                1.dp,
-                Brush.linearGradient(listOf(accentColor.copy(0.30f), outline.copy(0.08f))),
-                RoundedCornerShape(16.dp)
-            )
-            .padding(horizontal = 14.dp, vertical = 12.dp)
-    ) {
-        Column {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    letterSpacing = 1.5.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                color = accentColor.copy(alpha = 0.85f)
-            )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = animValue.toInt().toString(),
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-1).sp
-                ),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = sub,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-            )
         }
     }
 }

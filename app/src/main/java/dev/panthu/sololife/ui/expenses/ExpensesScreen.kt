@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.panthu.sololife.data.db.Expense
 import dev.panthu.sololife.ui.components.AmountText
@@ -113,13 +114,17 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
             // Breadcrumb / month scroller
             BreadcrumbStrip(
                 dateFilter = state.dateFilter,
-                displayTotal = state.displayTotal,
                 selectedYear = selectedYear,
                 onYearChange = { selectedYear = it },
                 onMonthSelected = { year, month -> vm.setDateFilter(ExpenseDateFilter.Month(year, month)) },
                 onClearToNone = { vm.clearDateFilter() },
                 onClearToMonth = { vm.setDateFilter(it) }
             )
+
+            // Total card — shown below filter whenever there are expenses
+            if (state.isLoaded && state.displayTotal > 0.0) {
+                TotalCard(total = state.displayTotal)
+            }
 
             // Category breakdown bar (always shows full-dataset proportions)
             if (state.allExpenses.isNotEmpty()) {
@@ -214,7 +219,6 @@ fun ExpensesScreen(vm: ExpensesViewModel = viewModel()) {
 @Composable
 private fun BreadcrumbStrip(
     dateFilter: ExpenseDateFilter,
-    displayTotal: Double,
     selectedYear: Int,
     onYearChange: (Int) -> Unit,
     onMonthSelected: (year: Int, month: Int) -> Unit,
@@ -226,21 +230,6 @@ private fun BreadcrumbStrip(
         is ExpenseDateFilter.None -> {
             val currentMonth = if (selectedYear == today.year) today.monthValue else -1
             Column {
-                if (displayTotal > 0.0) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Total: ฿${String.format("%,.0f", displayTotal)}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -260,7 +249,6 @@ private fun BreadcrumbStrip(
         is ExpenseDateFilter.Month -> {
             val monthName = Month.of(dateFilter.month)
                 .getDisplayName(TextStyle.FULL, Locale.getDefault())
-            val totalFormatted = "฿${String.format("%,.0f", displayTotal)}"
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -270,7 +258,7 @@ private fun BreadcrumbStrip(
             ) {
                 BreadcrumbPill(label = "← All", selected = false, onClick = onClearToNone)
                 BreadcrumbPill(
-                    label = "$monthName · $totalFormatted",
+                    label = monthName,
                     selected = true,
                     onClick = onClearToNone,
                     trailingIcon = {
@@ -294,7 +282,6 @@ private fun BreadcrumbStrip(
             val displayEnd = minOf(dateFilter.end, monthEnd)
             val fmt = DateTimeFormatter.ofPattern("MMM d")
             val rangeLabel = "${displayStart.format(fmt)}–${displayEnd.format(DateTimeFormatter.ofPattern("d"))}"
-            val totalFormatted = "฿${String.format("%,.0f", displayTotal)}"
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -308,7 +295,7 @@ private fun BreadcrumbStrip(
                     onClick = { onClearToMonth(parentMonth) }
                 )
                 BreadcrumbPill(
-                    label = "Wk ${dateFilter.weekIndex + 1}: $rangeLabel · $totalFormatted",
+                    label = "Wk ${dateFilter.weekIndex + 1}: $rangeLabel",
                     selected = true,
                     onClick = { onClearToMonth(parentMonth) },
                     trailingIcon = {
@@ -486,6 +473,35 @@ private fun ExpenseRow(expense: Expense) {
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun TotalCard(total: Double) {
+    val green = Color(0xFF52B788)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(green.copy(alpha = 0.08f))
+            .border(1.dp, green.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
+            .padding(horizontal = 20.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "TOTAL",
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 2.sp),
+            color = green.copy(alpha = 0.75f),
+            fontWeight = FontWeight.SemiBold
+        )
+        Text(
+            text = "฿${String.format("%,.0f", total)}",
+            style = MaterialTheme.typography.headlineSmall,
+            color = green,
+            fontWeight = FontWeight.ExtraBold
+        )
     }
 }
 

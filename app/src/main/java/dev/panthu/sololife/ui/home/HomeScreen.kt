@@ -20,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.*
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.*
@@ -317,6 +318,18 @@ private fun DiaryCalendarCard(
 
             Spacer(Modifier.height(6.dp))
 
+            // Shared phase for bubble animation — each marked cell offsets by dayNum
+            val bubbleTransition = rememberInfiniteTransition(label = "bubble")
+            val bubblePhase by bubbleTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = (2.0 * Math.PI).toFloat(),
+                animationSpec = infiniteRepeatable(
+                    animation = tween(2800, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart
+                ),
+                label = "bubblePhase"
+            )
+
             // Calendar grid — 7 columns
             val totalCells = startOffset + daysInMonth
             val rows = (totalCells + 6) / 7
@@ -338,6 +351,12 @@ private fun DiaryCalendarCard(
                                 val isToday = dayDate == today
                                 val isFuture = dayDate.isAfter(today)
 
+                                // Each marked bubble breathes at its own phase offset
+                                val bubbleScale = if (hasEntry || isToday) {
+                                    val offset = dayNum * 0.5f
+                                    1f + 0.06f * sin((bubblePhase + offset).toDouble()).toFloat()
+                                } else 1f
+
                                 val textColor = when {
                                     isToday  -> onPrimary
                                     hasEntry -> onPrimary
@@ -348,16 +367,15 @@ private fun DiaryCalendarCard(
                                 Box(
                                     modifier = Modifier
                                         .size(30.dp)
+                                        .scale(bubbleScale)
                                         .clip(CircleShape)
                                         .then(
                                             when {
-                                                // Today: primary → tertiary gradient
                                                 isToday -> Modifier.background(
                                                     Brush.linearGradient(
                                                         listOf(primary, tertiary.copy(alpha = 0.80f))
                                                     )
                                                 )
-                                                // Entry day: solid primary
                                                 hasEntry -> Modifier.background(primary.copy(alpha = 0.75f))
                                                 else -> Modifier
                                             }

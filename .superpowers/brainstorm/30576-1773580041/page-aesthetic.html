@@ -1,0 +1,66 @@
+<h2>What should the notebook page look like?</h2>
+<p class="subtitle">The background texture sets the whole mood of the editor.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="ruled" onclick="toggleSelect(this)">
+    <div class="card-image" style="position:relative;height:160px;overflow:hidden;background:#fffef7;border-bottom:1px solid #e0e0e0;">
+      <!-- Red margin line -->
+      <div style="position:absolute;left:36px;top:0;bottom:0;width:1.5px;background:#ffb3b3;opacity:0.7;"></div>
+      <!-- Ruled lines -->
+      <div style="position:absolute;left:0;right:0;top:28px;height:1px;background:#b8d4e8;opacity:0.8;"></div>
+      <div style="position:absolute;left:0;right:0;top:52px;height:1px;background:#b8d4e8;opacity:0.8;"></div>
+      <div style="position:absolute;left:0;right:0;top:76px;height:1px;background:#b8d4e8;opacity:0.8;"></div>
+      <div style="position:absolute;left:0;right:0;top:100px;height:1px;background:#b8d4e8;opacity:0.8;"></div>
+      <div style="position:absolute;left:0;right:0;top:124px;height:1px;background:#b8d4e8;opacity:0.8;"></div>
+      <div style="position:absolute;left:0;right:0;top:148px;height:1px;background:#b8d4e8;opacity:0.8;"></div>
+      <!-- Simulated text sitting on lines -->
+      <div style="position:absolute;left:48px;top:17px;right:12px;height:10px;background:#888;opacity:0.18;border-radius:2px;width:55%;"></div>
+      <div style="position:absolute;left:48px;top:41px;right:12px;height:10px;background:#888;opacity:0.18;border-radius:2px;width:80%;"></div>
+      <div style="position:absolute;left:48px;top:65px;right:12px;height:10px;background:#888;opacity:0.18;border-radius:2px;width:65%;"></div>
+    </div>
+    <div class="card-body">
+      <h3>A — Classic ruled paper</h3>
+      <p>Warm off-white background, horizontal blue lines, red left margin. Like a school notebook.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="dot" onclick="toggleSelect(this)">
+    <div class="card-image" style="position:relative;height:160px;overflow:hidden;background:#fafafa;border-bottom:1px solid #e0e0e0;">
+      <!-- Dot grid -->
+      <svg width="100%" height="100%" style="position:absolute;top:0;left:0;">
+        <defs>
+          <pattern id="dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+            <circle cx="10" cy="10" r="1" fill="#bbb" opacity="0.5"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#dots)"/>
+      </svg>
+      <!-- Simulated text -->
+      <div style="position:absolute;left:16px;top:20px;right:16px;height:10px;background:#888;opacity:0.18;border-radius:2px;width:50%;"></div>
+      <div style="position:absolute;left:16px;top:44px;right:16px;height:10px;background:#888;opacity:0.18;border-radius:2px;width:75%;"></div>
+      <div style="position:absolute;left:16px;top:68px;right:16px;height:10px;background:#888;opacity:0.18;border-radius:2px;width:60%;"></div>
+    </div>
+    <div class="card-body">
+      <h3>B — Dot grid</h3>
+      <p>Subtle dot matrix background. Modern and minimal — like a Leuchtturm bullet journal.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="clean" onclick="toggleSelect(this)">
+    <div class="card-image" style="position:relative;height:160px;overflow:hidden;background:#ffffff;border-bottom:1px solid #e0e0e0;">
+      <!-- Shadow on left edge simulating a bound book -->
+      <div style="position:absolute;left:0;top:0;bottom:0;width:8px;background:linear-gradient(to right,rgba(0,0,0,0.06),transparent);"></div>
+      <!-- Simulated text -->
+      <div style="position:absolute;left:24px;top:24px;right:16px;height:13px;background:#888;opacity:0.2;border-radius:2px;width:45%;"></div>
+      <div style="position:absolute;left:24px;top:48px;right:16px;height:9px;background:#888;opacity:0.15;border-radius:2px;width:80%;"></div>
+      <div style="position:absolute;left:24px;top:66px;right:16px;height:9px;background:#888;opacity:0.15;border-radius:2px;width:65%;"></div>
+      <div style="position:absolute;left:24px;top:84px;right:16px;height:9px;background:#888;opacity:0.15;border-radius:2px;width:72%;"></div>
+    </div>
+    <div class="card-body">
+      <h3>C — Clean white with binding shadow</h3>
+      <p>Pure white page, no lines, subtle left-edge shadow suggesting a bound book. Elegant and distraction-free.</p>
+    </div>
+  </div>
+
+</div>

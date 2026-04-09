@@ -1,0 +1,171 @@
+<h2>Editor screen layout</h2>
+<p class="subtitle">Full anatomy of the new DiaryDetailScreen — blocks, margin button, formatting bubble, and insert menu.</p>
+
+<div style="display:flex;gap:24px;flex-wrap:wrap;justify-content:center;">
+
+  <!-- Phone mockup: normal editing state -->
+  <div>
+    <p class="label" style="text-align:center;margin-bottom:8px;">Normal editing state</p>
+    <div style="width:280px;background:#fffef7;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.15);font-family:Georgia,serif;position:relative;">
+
+      <!-- Top bar -->
+      <div style="background:#fffef7;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(0,0,0,0.06);">
+        <span style="font-size:13px;">←</span>
+        <span style="font-size:12px;color:#6c63ff;">📅 Mar 15, 2026</span>
+        <span style="font-size:13px;color:#6c63ff;">✓</span>
+      </div>
+
+      <!-- Page with ruled lines -->
+      <div style="position:relative;min-height:440px;background:#fffef7;">
+        <!-- Ruled lines via repeating gradient -->
+        <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(to bottom,transparent,transparent 27px,#b8d4e8 27px,#b8d4e8 28px);opacity:0.5;pointer-events:none;"></div>
+        <!-- Red margin line -->
+        <div style="position:absolute;top:0;bottom:0;left:40px;width:1.5px;background:#ffb3b3;opacity:0.6;pointer-events:none;"></div>
+
+        <!-- Title block -->
+        <div style="padding:8px 16px 4px 48px;">
+          <div style="font-size:18px;font-weight:bold;color:#1a1a2e;line-height:28px;">Morning walk</div>
+        </div>
+
+        <div style="height:1px;background:rgba(0,0,0,0.08);margin:4px 16px 0 48px;"></div>
+
+        <!-- Text block 1 with + button -->
+        <div style="position:relative;padding:4px 16px 0 48px;">
+          <!-- + button in left margin -->
+          <div style="position:absolute;left:10px;top:8px;width:20px;height:20px;background:#e8e4ff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#6c63ff;font-weight:bold;font-family:sans-serif;">+</div>
+          <div style="font-size:13px;color:#333;line-height:28px;">Went out at 6am today. The air was crisp and the light was golden.</div>
+        </div>
+
+        <!-- Image block -->
+        <div style="position:relative;padding:4px 16px 0 48px;">
+          <div style="position:absolute;left:10px;top:8px;width:20px;height:20px;background:#e8e4ff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#6c63ff;font-weight:bold;font-family:sans-serif;">+</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;border-radius:8px;overflow:hidden;margin-bottom:4px;">
+            <div style="height:60px;background:linear-gradient(135deg,#a8d8ea,#7ec8e3);display:flex;align-items:center;justify-content:center;font-size:18px;">🌅</div>
+            <div style="height:60px;background:linear-gradient(135deg,#c8e6c9,#81c784);display:flex;align-items:center;justify-content:center;font-size:18px;">🌿</div>
+          </div>
+        </div>
+
+        <!-- Divider block -->
+        <div style="position:relative;padding:4px 16px 0 48px;">
+          <div style="position:absolute;left:10px;top:8px;width:20px;height:20px;background:#e8e4ff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#6c63ff;font-weight:bold;font-family:sans-serif;">+</div>
+          <div style="height:1px;background:linear-gradient(to right,transparent,#aaa,transparent);margin:8px 0;"></div>
+        </div>
+
+        <!-- Checklist block -->
+        <div style="position:relative;padding:4px 16px 0 48px;">
+          <div style="position:absolute;left:10px;top:8px;width:20px;height:20px;background:#e8e4ff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#6c63ff;font-weight:bold;font-family:sans-serif;">+</div>
+          <div style="font-size:12px;color:#333;line-height:28px;font-family:sans-serif;">
+            <div>☑ <span style="text-decoration:line-through;color:#aaa;">Drink water</span></div>
+            <div>☐ Stretch</div>
+            <div>☐ Journal</div>
+          </div>
+        </div>
+
+        <!-- Text block 2 (empty, with + and cursor) -->
+        <div style="position:relative;padding:4px 16px 0 48px;">
+          <div style="position:absolute;left:10px;top:8px;width:20px;height:20px;background:#6c63ff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:bold;font-family:sans-serif;">+</div>
+          <div style="font-size:13px;color:#bbb;line-height:28px;font-style:italic;font-family:sans-serif;">Write something…<span style="border-left:2px solid #6c63ff;margin-left:1px;">&nbsp;</span></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Phone mockup: insert menu -->
+  <div>
+    <p class="label" style="text-align:center;margin-bottom:8px;">After tapping "+"</p>
+    <div style="width:280px;background:#fffef7;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.15);font-family:Georgia,serif;position:relative;">
+
+      <!-- Top bar -->
+      <div style="background:#fffef7;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(0,0,0,0.06);">
+        <span style="font-size:13px;">←</span>
+        <span style="font-size:12px;color:#6c63ff;">📅 Mar 15, 2026</span>
+        <span style="font-size:13px;color:#6c63ff;">✓</span>
+      </div>
+
+      <!-- Dimmed page background -->
+      <div style="position:relative;min-height:440px;background:#fffef7;filter:brightness(0.92);">
+        <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(to bottom,transparent,transparent 27px,#b8d4e8 27px,#b8d4e8 28px);opacity:0.4;pointer-events:none;"></div>
+        <div style="position:absolute;top:0;bottom:0;left:40px;width:1.5px;background:#ffb3b3;opacity:0.5;pointer-events:none;"></div>
+        <div style="padding:8px 16px 4px 48px;"><div style="font-size:18px;font-weight:bold;color:#1a1a2e;line-height:28px;">Morning walk</div></div>
+        <div style="height:1px;background:rgba(0,0,0,0.08);margin:4px 16px 0 48px;"></div>
+        <div style="padding:4px 16px 0 48px;"><div style="font-size:13px;color:#999;line-height:28px;">Went out at 6am today...</div></div>
+      </div>
+
+      <!-- Insert bottom sheet -->
+      <div style="position:absolute;bottom:0;left:0;right:0;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,0.12);padding:16px;font-family:sans-serif;">
+        <div style="width:36px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 16px;"></div>
+        <div style="font-size:12px;font-weight:600;color:#888;letter-spacing:0.8px;margin-bottom:12px;">INSERT BLOCK</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="background:#f5f3ff;border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:20px;">📝</span>
+            <div><div style="font-size:13px;font-weight:600;">Text</div><div style="font-size:11px;color:#888;">Paragraph</div></div>
+          </div>
+          <div style="background:#f0f9ff;border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:20px;">🖼️</span>
+            <div><div style="font-size:13px;font-weight:600;">Image</div><div style="font-size:11px;color:#888;">From gallery</div></div>
+          </div>
+          <div style="background:#fff5f5;border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:20px;">➖</span>
+            <div><div style="font-size:13px;font-weight:600;">Divider</div><div style="font-size:11px;color:#888;">Horizontal line</div></div>
+          </div>
+          <div style="background:#f0fff4;border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:20px;">☑️</span>
+            <div><div style="font-size:13px;font-weight:600;">Checklist</div><div style="font-size:11px;color:#888;">Todo items</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phone mockup: formatting bubble -->
+  <div>
+    <p class="label" style="text-align:center;margin-bottom:8px;">Text selected → format bubble</p>
+    <div style="width:280px;background:#fffef7;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.15);font-family:Georgia,serif;position:relative;">
+
+      <div style="background:#fffef7;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(0,0,0,0.06);">
+        <span style="font-size:13px;">←</span>
+        <span style="font-size:12px;color:#6c63ff;">📅 Mar 15, 2026</span>
+        <span style="font-size:13px;color:#6c63ff;">✓</span>
+      </div>
+
+      <div style="position:relative;min-height:200px;background:#fffef7;padding-bottom:60px;">
+        <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(to bottom,transparent,transparent 27px,#b8d4e8 27px,#b8d4e8 28px);opacity:0.5;pointer-events:none;"></div>
+        <div style="position:absolute;top:0;bottom:0;left:40px;width:1.5px;background:#ffb3b3;opacity:0.6;pointer-events:none;"></div>
+
+        <div style="padding:8px 16px 4px 48px;"><div style="font-size:18px;font-weight:bold;color:#1a1a2e;line-height:28px;">Morning walk</div></div>
+        <div style="height:1px;background:rgba(0,0,0,0.08);margin:4px 16px 0 48px;"></div>
+
+        <!-- Text with selection highlight -->
+        <div style="padding:4px 16px 0 48px;font-size:13px;color:#333;line-height:28px;position:relative;">
+          Went out at 6am today.
+          <!-- Floating bubble above selected text -->
+          <div style="position:absolute;top:-36px;left:0;background:#1a1a2e;border-radius:8px;padding:6px 10px;display:flex;gap:8px;align-items:center;box-shadow:0 2px 12px rgba(0,0,0,0.2);font-family:sans-serif;font-size:12px;color:#fff;white-space:nowrap;">
+            <span style="font-weight:bold;">B</span>
+            <span style="width:1px;height:14px;background:rgba(255,255,255,0.2);"></span>
+            <span style="font-style:italic;">I</span>
+            <span style="width:1px;height:14px;background:rgba(255,255,255,0.2);"></span>
+            <span style="text-decoration:underline;">U</span>
+            <span style="width:1px;height:14px;background:rgba(255,255,255,0.2);"></span>
+            <span>☰</span>
+          </div>
+          <span style="background:#c7b8ff;border-radius:2px;"> The air was crisp</span> and the light was golden.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <h3>Key layout details</h3>
+  <ul>
+    <li><strong>Page background:</strong> Canvas <code>drawLine</code> every 28dp (blue, α 0.35) + one vertical red line at 40dp from left (α 0.4). Drawn behind all blocks.</li>
+    <li><strong>Content inset:</strong> 48dp left padding (right of margin line), 16dp right. Title sits above first block with a thin separator.</li>
+    <li><strong>"+" button:</strong> 20dp circle, positioned in the left margin (8–10dp from edge), appears on every block row. Tapping opens a modal bottom sheet with 4 block types.</li>
+    <li><strong>Formatting bubble:</strong> <code>Popup</code> anchored to the focused <code>RichTextEditor</code>; shows B / I / U / bullet. Dismissed on tap-outside or cursor collapse.</li>
+    <li><strong>Image block:</strong> 1 image = full width rounded card; 2+ = 2-column grid. Tap-and-hold on image to delete.</li>
+    <li><strong>Checklist:</strong> Each row has a <code>Checkbox</code> + <code>BasicTextField</code>. Checked items get strikethrough. Enter key appends a new item.</li>
+    <li><strong>Divider:</strong> Faded horizontal gradient line (transparent → #aaa → transparent).</li>
+  </ul>
+</div>
